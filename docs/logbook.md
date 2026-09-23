@@ -62,6 +62,7 @@ Record consequential implementation decisions, evidence, limitations and follow-
 - Local native tests, 29 Python tests and seven JavaScript tests passed. Astropy 8.0.1 passed both synthetic export checks in the optional local validation environment. Browser/hosted results are appended after completion.
 - Browser checks passed for manual/recorded white-balance selection and color/raw switches. An isolated synthetic session showed both source/resolution notices before capture and after saving, without accessing hardware. The new calibration schema validated against a generated profile. Synthetic fixtures were kept outside the normal session root.
 - User explicitly requested continued offline work. Stage-micrometer calibration at both resolutions and deliberate overexposure/saturation characterization remain **pending**. UI wording distinguishes the 255-DN endpoint count from validated sensor saturation. No physical profile, black offset or binning/crop/scaling interpretation is claimed. Release wording describes a calibration workflow.
+- Hosted [macOS and independent FITS CI](https://github.com/uwarring82/microscope/actions/runs/35862324570) passed for implementation commit `15d8c69`, including Astropy and NASA fitsverify. Corrected the v0.2.0 release-note wording without moving its tag. Version `v0.2.1` records the review fixes and this validation entry.
 
 ### Next physical validation session
 
