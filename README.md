@@ -2,7 +2,7 @@
 
 A local web UI and experimental native macOS SDK for the USB-connected Di-Li **5MP-B CMOS Camera**.
 
-[Development logbook](docs/logbook.md) · [Session/data format](docs/data-format.md) · [FAIR practice](docs/fair.md) · [Citation](CITATION.cff) · [MIT license](LICENSE)
+[Current status](docs/status.md) · [Development logbook](docs/logbook.md) · [Session/data format](docs/data-format.md) · [FAIR practice](docs/fair.md) · [Citation](CITATION.cff) · [MIT license](LICENSE)
 
 ```sh
 make                       # build the native SDK; uses installed libusb
@@ -18,7 +18,7 @@ Open **http://127.0.0.1:8765**, then click **Start live view**. Stop the server 
 - Python and C APIs for capture and settings. [SDK usage and protocol notes](docs/native-sdk.md).
 - Open local PNG, JPEG, WebP, or BMP images; zoom, pan, fit, RGB readout, crosshair, and histogram.
 - Capture the exact displayed raw frame into a durable, replayable session, with settings, SHA-256, timestamps and provenance.
-- A calibration workflow with persistent profiles per objective/configuration/resolution, a multi-interval fit and its standard error. Physical stage-micrometer validation is still pending.
+- A calibration workflow with persistent profiles per objective/configuration/resolution, a multi-interval fit and its standard error. Provisional USAF profiles exist locally for seven zoom marks; total uncertainty and physical validation are pending ([status](docs/status.md)).
 - Editable distance lines, rectangles/areas, circles/diameters and points; labels, undo/redo and saved annotations.
 - Raw FITS plus image-only, annotated and inspection-sheet PNG exports with saved settings, raw histogram, measurements and notes.
 - Raw clipping and a relative central-green focus indicator, computed before white balance.
@@ -30,7 +30,7 @@ Open **http://127.0.0.1:8765**, then click **Start live view**. Stop the server 
 3. Select a marker tool; draw in the image, label markers, and add notes. **Select / move / edit endpoints** edits existing shapes. Save notes and markers; the session can be reopened from **Saved sessions and captures**.
 4. **Save raw FITS** or select a PNG layout and **Save PNG**. Export automatically saves pending edits. Files and metadata remain in the session folder; the UI provides a link to the saved export.
 
-To create a calibration, capture a stage micrometer, draw/select a line and enter its known length. Add at least three intervals in **Create a profile from a stage micrometer**, then fit and save the named profile. The displayed uncertainty is fit precision only, not a complete metrology uncertainty. No physical calibration is provided with this source release.
+To create a calibration, capture a stage micrometer, draw/select a line and enter its known length. Add at least three intervals in **Create a profile from a stage micrometer**, then fit and save the named profile. The displayed uncertainty is fit precision only, not a complete metrology uncertainty. Calibration profiles are local data; none ships with the source. See [USAF calibration](docs/calibration-usaf.md) for the method used on this microscope.
 
 **Illuminated capture verified:** scratches on an aluminium optical breadboard are clearly visible, and an exposure sweep produced the expected change in brightness. Color reconstruction now resolves the red, green, and blue subpixels of a smartphone showing white. **Prototype limitations:** Absolute orientation, quantitative color accuracy, and exposure timing remain uncalibrated. Color uses bilinear RGGB demosaicing; raw grayscale retains the original sensor values. There is no simulated feed or fallback to another camera.
 
