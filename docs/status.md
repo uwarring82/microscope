@@ -1,6 +1,6 @@
 # Project status
 
-Snapshot: **23 September 2026**, after commit `a44e352` (software v0.2.1).
+Snapshot: **24 September 2026** (software v0.2.1).
 Use this page for the current state; the [logbook](logbook.md) holds the evidence
 and history. Update this page whenever a status below changes.
 
@@ -8,9 +8,10 @@ and history. Update this page whenever a status below changes.
 
 | Area | Status |
 | --- | --- |
-| Native USB capture, both modes | Working on Apple Silicon; hardware-free tests pass (native, 39 Python, 7 JavaScript) and run in macOS CI. |
+| Native USB capture, both modes | Working on Apple Silicon; hardware-free tests pass (native, 41 Python, 7 JavaScript) and run in macOS CI. |
 | Exact-frame capture, sessions, FITS/PNG exports | Working; replay, checksum and FITS payload checks recorded in the logbook. |
 | Capture provenance | Captures made **from now on** record `modified_paths`, `snapshot_at` and `snapshot_scope`. Captures made before the restart after `a44e352` record only a `modified` boolean. |
+| Specimen sessions | `tools/specimen_session.py` captures fields with the matching profile attached, verifies files and draws contact sheets/ledgers; use with the [acquisition sheet](acquisition-sheet.md). Bracketing is tested against a simulated camera only. |
 | Open software issues | The rightmost raw column is always zero; its cause is not known. Sensor saturation level, black offset and exposure time in seconds are not characterized. |
 
 ## Spatial calibration
