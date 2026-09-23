@@ -7,6 +7,22 @@ provisional pending ring-return and reference-plane validation. Intermediate
 settings are rough estimates with no established total accuracy. See the
 [physical validation plan](calibration-validation-plan.md).
 
+## Recorded microscope and camera details
+
+| Component | Recorded information |
+| --- | --- |
+| Microscope stand / zoom head | Manufacturer and model unrecorded; operator reports no additional known markings. |
+| Camera | Di-Li Mikroskope-Kamera label; USB product `5MP-B CMOS Camera`. |
+| USB identity | `0547:c004`, revision `a000`, vendor-specific non-UVC interface; observed 480 Mb/s link. Manufacturer string `123456789` is not a serial number. |
+| Objective / camera adapter | “Default objective” is an operator label; objective and adapter remained unchanged. Their manufacturer, model and magnification markings are unrecorded. |
+| Zoom markings | 0.58, 2, 3, 4, 5, 6, 7; ring readings are not a measurement of total magnification. |
+| Capture modes | 1280×960 and 2592×1944 RAW8 RGGB. Sensor model/pitch and the mode sampling mechanism remain unconfirmed. |
+| Host and acquisition | macOS on Apple Silicon, native libusb SDK, software v0.2.1 during this collection. |
+| Other unrecorded parameters | Numerical aperture, working distance, illumination geometry, stage/focus/surface-height datum and target certificate/serial. |
+
+Identification comes from recorded device observations and operator labels;
+the camera branding does not establish the microscope/zoom-head manufacturer.
+
 ## Initial reference at zoom 0.58
 
 The initial physical measurements on 2026-09-23 established **provisional, resolution-specific
@@ -266,3 +282,46 @@ Remaining physical checks: an independently certified length reference, zooms
 inside 0.58–2, repeated approach to marks from both directions, target translation
 across the field and focus/target-plane changes. The independent immediate frame
 repeats above do not replace these mechanical or metrological checks.
+
+
+## Relative scale check on overlapping specimen fields
+
+An offline check uses seven visually reviewed compact particle landmarks common
+to full-resolution images at marked zooms 2, 4 and 7. The operator recorded a
+position change at zoom 2; image correspondence now supports **partial overlap**
+with 4 and 7, without reconstructing stage coordinates or claiming that every
+field is registered. The diffuse endpoints of the elongated feature were not
+used as length references.
+
+Raw RGGB cell-green means are background-subtracted using a local annular plane.
+A connected half-peak support mask is located from lightly smoothed signal;
+centroid weights are positive, unsmoothed green intensities. The selected raw
+ROIs have maxima of 212 / 104 / 90 DN at zooms 2 / 4 / 7. Profiles and nominal zoom
+ratios are not inputs to the free similarity fit (translation, rotation, scale).
+Profile-predicted ratios are compared only after fitting pixel coordinates.
+The [relative-scale helper](../tools/relative_scale.py) and synthetic tests are
+camera independent; source hashes, raw coordinates, ROI bounds, candidate
+correspondences and complete analysis scripts remain in the local data packet.
+
+| Comparison | Fitted target/source pixel ratio | Profile-predicted ratio | Relative calibrated-length disagreement |
+| --- | ---: | ---: | ---: |
+| 2 → 4 | 2.003003 | 2.004381 | −0.069% |
+| 4 → 7 | 1.751430 | 1.747499 | +0.225% |
+| 2 → 7 | 3.508118 | 3.502653 | +0.156% |
+
+Nineteen pairs with baselines of at least 150 raw pixels at zoom 2 differ by
+at most 0.423% after application of the profiles. These pairs share endpoints
+and are not independent observations. Threshold (30/70%), green-phase, crop-radius
+and alternate-exposure checks shift fitted ratios by less than 0.098%; leaving
+one landmark out changes them by less than 0.056%. This measures the sensitivity
+of this analysis, not the uncertainty of a future microscope setting.
+
+The recorded specimen fields support relative scale consistency below a 1%
+investigation threshold. They cannot reveal a common absolute error, establish
+correct reference-to-specimen height transfer, or measure mechanical ring return.
+A discrepancy would not uniquely identify ring or height error; localization,
+correspondence, distortion, illumination and profile bias are alternatives.
+The [validation plan](calibration-validation-plan.md) now begins with a 30-frame
+pilot (2/4/7, five returns from one direction, two frames per return). Larger
+runs depend on the tolerance and pilot result; height and field checks remain
+pending. No new camera acquisition was performed for this comparison.

@@ -22,9 +22,26 @@ The ring marking is an operator observation; the USB camera does not measure it.
 Record whether focus was adjusted after each zoom change. Establish a safe
 reference height without contacting or loading the specimen's optical surface.
 
-## 1. Ring return and direction dependence
+## 1. Pilot first: ring return at 2, 4 and 7
 
-Start with full resolution. At each of 0.58, 2, 3, 4, 5, 6 and 7:
+Start with **five returns from lower zoom at each of 2, 4 and 7**, using full
+resolution and two consecutive frames per return: **15 mechanical returns / 30
+raw frames**. Approach without overshoot, keep the reference plane and focus
+fixed if measurable, and record every control adjustment. This common approach
+direction is accessible even if 7 is an upper endpoint; never force travel past
+an endpoint. These settings cover the existing overlapping specimen fields.
+
+Set the required tolerance and its allocated ring-return contribution before
+testing. Compare the spread across returns with that contribution and with the
+within-return image variation. If it is clearly small, reduce subsequent work
+to the configurations needed for the intended measurements; if it is substantial,
+prioritize direction dependence and focus-height tests. Five returns are a pilot,
+not a confidence bound on rare positioning errors. One approach direction does
+not test hysteresis. Do not lower the acceptance criterion after seeing the data.
+
+### Expanded run if the pilot or application requires it
+
+At each required marking among 0.58, 2, 3, 4, 5, 6 and 7:
 
 1. Move clearly away from the mark, then approach it from lower zoom without
    overshoot. Record the excursion and approach direction.
@@ -53,6 +70,19 @@ when describing uncertainty of a future single setting; uncertainty of the
 estimated mean is a different quantity. Retain outliers and document causes.
 
 ## 2. Reference plane and specimen focus height
+
+First compare several matched particle separations in the existing specimen
+raw frames at zooms 2, 4 and 7. Fit their image geometry without a calibration
+scale prior; compare with the measured profile ratios afterward. Check alternate
+exposures, centroid definitions and spatial residuals, not the fuzzy ends of an
+elongated streak. This is a relative consistency check at the specimen's actual
+imaging condition, not an absolute calibration or an isolated height test.
+
+A discrepancy around 1% can be a useful investigation trigger **if it exceeds
+the image-localization checks**, not a universal tolerance or a diagnosis of ring
+return/height error. Correspondence, blur, illumination, distortion and profile
+bias can also contribute. Agreement cannot exclude a shared target or
+specimen-plane scale offset and does not replace the physical height check.
 
 Use the mirror's working surface height as the reference-plane target, not the
 holder/base height. If the historical height cannot be recovered, mark that
@@ -102,6 +132,22 @@ movement as a length standard. Fit position-dependent scale and axis differences
 report the validated field region and consider a distortion correction only if
 supported by repeatable data.
 
+## 5. Registered feature: focus and illumination
+
+Use one identifiable feature at zoom 4, keeping the ring and stage position
+fixed. Acquire a recorded focus series and two or three illumination directions,
+with unsaturated raw captures at each condition. Keep/record exposure, gain and
+white balance; do not compare independently stretched displays as intensities.
+Track displacement using several nearby particles, because focusing can change
+scale or cause image shift. Test whether the low-zoom secondary arc moves or
+focuses independently of the front-surface features; edge/holder reflection or
+transmission through the substrate is a hypothesis, not an identification.
+
+Use matching dark/flat references for quantitative intensity comparison, and
+characterize stability with illumination geometry. A flat cannot remove sample
+specularity or make different illumination angles directly comparable. No
+coating/contamination diagnosis is established by the current images alone.
+
 ## Acceptance and record keeping
 
 Choose the required specimen measurement tolerance before judging the results.
@@ -127,3 +173,5 @@ For distinctions among repeatability, precision and measurement uncertainty,
 see [NIST TN 1297, terminology](https://www.nist.gov/pml/nist-technical-note-1297/nist-tn-1297-appendix-d1-terminology).
 The acquisition counts above are a proposed local experiment, not a quoted
 manufacturer specification or prescribed standard.
+
+For illumination-dependent contrast and nonuniformity, see [Edmund Optics, common illumination types](https://www.edmundoptics.com/knowledge-center/application-notes/illumination/choose-the-correct-illumination). The proposed flat/dark and registered-angle checks must be validated for this reflective specimen; they are not an assumed correction already applied.
