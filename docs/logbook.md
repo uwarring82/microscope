@@ -91,3 +91,10 @@ Record consequential implementation decisions, evidence, limitations and follow-
 
 - Operator requested collecting further settings before analysis. The first additional set was initially reported as zoom 1, then explicitly corrected to zoom 2. Updated annotation revisions and FITS exports preserve that correction history without changing raw bytes, checksums or acquisition timestamps. A subsequent set was collected at zoom 4. Each setting has two independent frames at each resolution, at 20 exposure lines/gain 13, with exact raw data, original PNGs, raw FITS, metadata and lab notes. Raw sizes/checksums were verified and all eight frames had zero pixels at 255.
 - Zoom-2 and zoom-4 captures explicitly remain uncalibrated; the 0.58 profiles were not applied and no scale fit was performed. Acquisition was stopped after collection and the operator was told the next zoom setting could be selected. Subsequent zooms require their own recorded markings and reference data.
+
+
+## 2026-09-23 — Zoom-7 reference collection
+
+- Operator confirmed zoom 7. Saved two raw captures per resolution at 20 exposure lines/gain 13; those initial references were dim (primary raw maxima 31 DN in preview and 43 DN at full resolution).
+- Retained the initial frames and added two brighter captures per resolution at 120 lines/gain 13, giving primary maxima 128 DN and 191 DN. All eight zoom-7 frames had zero pixels at 255. Saved exact RAW8, original PNG, raw FITS, acquisition settings, identities/checksums and lab notes. Target bars were visually checked for collection quality; no new spatial fit or resolution measurement was performed.
+- The current series comprises zoom markings 0.58, 2, 4 and 7. The first has provisional profiles; later settings remain explicitly uncalibrated pending the operator-requested analysis phase. The local evidence packet preserves the zoom-1-to-2 correction history, all raw frames and reference sessions, latest annotations/FITS, analysis records and a checksum inventory. No raw images or private paths are published to Git.
