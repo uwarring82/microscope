@@ -43,3 +43,10 @@ Record consequential implementation decisions, evidence, limitations and follow-
 - Imported-image profile matching now uses the image's own dimensions. Calibration fits and profile mismatch handling were tested with synthetic references; no physical calibration was assigned to the smartphone image.
 - FITS header strings replace control/non-ASCII characters, while the JSON extension preserves complete original metadata. Added a regression case for a multiline Unicode objective label.
 - Public-source review found no private host/mount paths, credentials, specimen data or vendor binaries among publication files. Raw recordings, generated reports and sessions remain local and ignored.
+
+## 2026-09-23 — Public publication
+
+- Published the source history to [uwarring82/microscope](https://github.com/uwarring82/microscope), with `main` as the default branch and the MIT license recognized by GitHub.
+- Baseline commit: `90265b9`; inspection implementation and FAIR metadata: `fc97547`. The [first hosted macOS test run](https://github.com/uwarring82/microscope/actions/runs/35854273996) passed for `fc97547`.
+- Release metadata is version `0.2.0`. The `v0.2.0` tag pins this release and its dataset schema; subsequent logbook entries and fixes remain part of normal Git history.
+- The source repository has no tracked recordings, sessions or vendor executables. Dataset licensing and a long-term archive/DOI remain separate stewardship steps described in [FAIR practice](fair.md).
