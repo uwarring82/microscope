@@ -15,6 +15,17 @@
   },
   "$defs": {
     "gains": {"type": "array", "minItems": 3, "maxItems": 3, "items": {"type": "number", "minimum": 0.125, "maximum": 8}},
+    "software": {
+      "type": "object",
+      "description": "Repository-state snapshot cached at first use in a process; not a loaded-code attestation. New fields are optional for older captures.",
+      "properties": {
+        "commit": {"type": ["string", "null"]},
+        "modified": {"type": ["boolean", "null"]},
+        "modified_paths": {"type": ["array", "null"], "uniqueItems": true, "items": {"type": "string", "minLength": 1}, "description": "Sorted repository-relative changed/untracked paths, including both rename/copy paths. Ignored files are excluded; null means unknown."},
+        "snapshot_at": {"type": "string", "format": "date-time", "description": "UTC start of the repository-state observation, not the capture timestamp."},
+        "snapshot_scope": {"const": "process_first_use"}
+      }
+    },
     "frame": {
       "type": "object",
       "required": ["file", "width", "height", "resolution", "pixel_format", "captured_at", "exposure_lines", "gain", "byte_length", "sha256"],
@@ -32,7 +43,7 @@
         "source_type": {"enum": ["camera", "replay"]},
         "white_balance_gains": {"$ref": "#/$defs/gains"},
         "annotation_file": {"type": "string"},
-        "software": {"type": "object", "description": "Software version, source URL, commit and modified state."},
+        "software": {"$ref": "#/$defs/software"},
         "provenance": {"type": "object", "description": "Replay dataset, original filename and checksum; previous provenance may be nested."}
       },
       "allOf": [

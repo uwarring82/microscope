@@ -7,7 +7,7 @@ This project follows the [FAIR guiding principles](https://www.gofair.foundation
 | Findable | Public repository, release version, Git history, CITATION.cff and CodeMeta. New sessions have a UUID URN; captures and profiles have unique IDs. | Archive releases/datasets with a persistent DOI when appropriate. GitHub URLs and UUIDs do not by themselves provide archival preservation. |
 | Accessible | Source and metadata through public HTTPS; local sessions are documented files, usable without the UI. | Dataset owners select a repository, access policy and retention plan. Local sessions are not publicly indexed. |
 | Interoperable | Documented RAW8 RGGB, JSON with a versioned JSON Schema, FITS 4.0 image export, PNG inspection sheets, explicit units and coordinate conventions. | External readers must respect Bayer phase and row order. The JSON schema validates structure, while the loader also verifies file lengths and checksums. |
-| Reusable | MIT code license, checksums, captured settings, raw/display separation, source provenance, calibration references and fit uncertainty, software version/commit/modified state. | Assign a data license before sharing specimen datasets. The code license does not automatically license specimen data or third-party vendor binaries. |
+| Reusable | MIT code license, checksums, captured settings, raw/display separation, source provenance, calibration references and fit uncertainty, software version/commit/modified paths and explicitly timed process snapshot (older records have only the modified flag). | Assign a data license before sharing specimen datasets. The code license does not automatically license specimen data or third-party vendor binaries. |
 
 ## Publishing a dataset
 

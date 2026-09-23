@@ -114,6 +114,15 @@ class CaptureTests(unittest.TestCase):
         self.assertIn('HOSTREAD', keys['TSOURCE'])
         self.assertIn(m['sha256'],keys['RAWSHA']);self.assertIn('original.raw',keys['SRCFILE'])
         self.assertEqual(fits[offset],0);self.assertEqual(fits[offset+len(self.frame.pixels)-1],255)
+        # Software snapshot extensions must survive the complete JSON payload,
+        # including path lists that cannot be represented by one FITS card.
+        extension = offset + ((len(self.frame.pixels)+2879)//2880)*2880
+        pos = next(i for i in range(extension, len(fits), 80)
+                   if fits[i:i+8] == b'END     ')
+        payload = extension + ((pos-extension+80+2879)//2880)*2880
+        embedded = json.loads(fits[payload:].rstrip(b'\0 '))
+        self.assertEqual(embedded['metadata']['software'], m['software'])
+        self.assertIn('modified_paths', embedded['metadata']['software'])
 
     def test_invalid_annotations_and_corrupted_saved_raw_are_rejected(self):
         record=self.capture();m=record['metadata']

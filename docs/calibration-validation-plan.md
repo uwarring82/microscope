@@ -1,6 +1,7 @@
 # Physical calibration validation plan
 
-Status: **planned, not performed**. Use the current 14 profiles only at their
+Status: **physical checks planned, not performed**. The saved-frame relative-scale
+check is complete; it does not replace these physical checks. Use the current 14 profiles only at their
 recorded zoom markings and exact resolution, with the same objective/adapter.
 They remain provisional at those markings: neither returning to a mark nor
 transferring the reference scale to another focus height has been validated.
@@ -11,7 +12,10 @@ claim at either measured or intermediate settings.
 ## Record the setup before acquiring anything
 
 Use an unsaturated, well-focused reference. Record target identity/certificate,
-objective/adapter markings, illumination, stage and focus positions, surface
+objective/adapter markings, illumination source identity/type and spectrum or
+filter, source setting, azimuth and incidence angle (relative to the surface
+normal), source distance, coaxial/off-axis geometry and ambient light, stage and
+focus positions, surface
 height relative to a reproducible datum, date, operator, and direction of zoom
 approach. Keep exposure and gain fixed within a comparison where practicable;
 record every change. Preserve exact RAW8, original timestamps, frame IDs,
@@ -134,19 +138,71 @@ supported by repeatable data.
 
 ## 5. Registered feature: focus and illumination
 
-Use one identifiable feature at zoom 4, keeping the ring and stage position
-fixed. Acquire a recorded focus series and two or three illumination directions,
-with unsaturated raw captures at each condition. Keep/record exposure, gain and
-white balance; do not compare independently stretched displays as intensities.
-Track displacement using several nearby particles, because focusing can change
-scale or cause image shift. Test whether the low-zoom secondary arc moves or
-focuses independently of the front-surface features; edge/holder reflection or
-transmission through the substrate is a hypothesis, not an identification.
+The saved mirror overview has a dark face against a bright diffuse background.
+This suggests **scatter-dominated, dark-field-like** imaging, consistent with
+specular light largely missing the objective; the actual source and geometry
+remain unconfirmed. In that interpretation, bright features send more scattered
+light into the collection cone, while dark patches send less than nearby regions.
+This is not a measurement of total scatter, reflectance or a coating diagnosis.
+
+Use the **zoom-4 streak field**, registered with the streak and several nearby
+compact points, keeping ring and stage position fixed. Start with gain register
+**13** (as in the target series) and choose **one fixed exposure** with usable
+signal and no raw values at 255 in the defined ROI at any tested focus/lighting
+condition; retain headroom and the ROI maximum/counts. Zero endpoint counts alone
+do not establish absence of saturation below 255. Set the exposure rule before
+collection, not by adjusting each frame. If no single usable exposure spans the
+conditions, design separate documented runs first; do not compare their feature
+counts or raw brightness directly.
+
+Record a central focus and **-5 to +5 focus steps**, returning through the same
+recorded approach direction. Record the mechanical increment and which component
+moves; call these steps, not micrometres, unless focus travel is calibrated.
+For each of **2-3 recorded illumination directions**, acquire the full eleven-frame
+series. Add a **coaxial bright-field series of the same registered feature** if
+the setup supports it, and confirm that specular return enters the objective.
+Keep gain, exposure, camera mode and display processing fixed for the comparison.
+Track displacement/scale with nearby points because focusing may change both.
+
+For the secondary arc, one equivalent **zoom-0.58 focus series** is sufficient
+for an initial motion test. Track the arc relative to candidate surface points;
+independent motion/focus would support an edge/holder reflection or transmission
+hypothesis, not identify its exact surface. Surface-side assignments remain open.
 
 Use matching dark/flat references for quantitative intensity comparison, and
 characterize stability with illumination geometry. A flat cannot remove sample
-specularity or make different illumination angles directly comparable. No
-coating/contamination diagnosis is established by the current images alone.
+specularity or make different illumination directions directly equivalent.
+
+## 6. Repeat inspection and comparison conditions
+
+The current captures are a **first appearance record, not a controlled repeat-
+inspection baseline**. Mark/record the optic orientation in its holder without
+marking the optical surface. Record stage coordinates or register each field to
+the streak plus multiple nearby features, retaining the registration residuals.
+Record the objective/adapter, ring marking and approach, resolution, focus rule,
+illumination source/angles/settings and specimen height. Lock gain and a defined
+exposure rule before starting; retain the actual values and all raw frames.
+
+A repeat comparison needs the same registered field and matched acquisition and
+illumination conditions. If a control changes, document it as a separate condition
+and establish a new matched reference. Keep processing fixed too; independent
+contrast stretches and the current 103-3000-line/gain-60 exposure range change
+feature detectability and do not support comparisons of feature counts or density.
+
+## 7. Optical performance: separate measurement and decision
+
+Microscope appearance does not determine fitness for the optical application.
+Agree acceptance criteria with the setup's users **before measuring**. Record
+operating wavelength/bandwidth, angle of incidence relative to the surface normal,
+polarization and beam footprint, and obtain the applicable coating specification.
+
+Measure reflected/incident power with a suitably calibrated power meter at those
+conditions; account for source drift, detector response, alignment and collection
+aperture in the uncertainty. Compare with the coating specification. If practical,
+measure scattered or otherwise lost power against a reference mirror under the
+same conditions, documenting collection geometry and detection limits. A missing
+specular fraction alone does not distinguish absorption, scatter and transmission.
+No such performance measurement or acceptance decision has been made here.
 
 ## Acceptance and record keeping
 
@@ -175,3 +231,10 @@ The acquisition counts above are a proposed local experiment, not a quoted
 manufacturer specification or prescribed standard.
 
 For illumination-dependent contrast and nonuniformity, see [Edmund Optics, common illumination types](https://www.edmundoptics.com/knowledge-center/application-notes/illumination/choose-the-correct-illumination). The proposed flat/dark and registered-angle checks must be validated for this reflective specimen; they are not an assumed correction already applied.
+
+The scatter-dominated interpretation is an inference from the saved images, not a
+recorded illumination setup. See [Edmund Optics, in-line illumination](https://www.edmundoptics.eu/knowledge-center/application-notes/illumination/in-line-illumination-considerations)
+for the contrast change when specular return enters the objective, and
+[darkfield ring illumination](https://www.edmundoptics.com/knowledge-center/application-notes/illumination/darkfield-illumination-with-ring-lights-for-machine-vision/)
+for collection of scattered light from reflective objects. These sources do not
+identify the light or coating used in this dataset.

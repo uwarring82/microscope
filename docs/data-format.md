@@ -23,6 +23,33 @@ Replay uses each frame row's `white_balance_gains`, falling back to the manifest
 
 Sessions may contain multiple resolutions and both camera/replay captures. The API returns `source_types` and `resolutions` in the session inventory and `session_summary` with a saved capture. The UI shows a persistent notice for mixed sessions, including when the next preview capture would create a mixture. Every frame retains its own settings and provenance; replay still groups by resolution, exposure and sensor gain.
 
+## Software snapshot provenance
+
+New `software` records retain version/repository/license, `commit` and `modified`,
+and add `modified_paths`, `snapshot_at` and `snapshot_scope`.
+`modified_paths` is a sorted list of repository-relative staged, unstaged and
+untracked paths, including both source/destination names for renames or copies.
+Paths with spaces, tabs, newlines or Unicode are preserved. Git-ignored files
+(including local sessions, artifacts and generated binaries) are excluded;
+submodule changes identify the submodule path, not every nested file.
+An empty list with `modified: false` means a successful clean status check;
+`null` means unknown. If status fails after a successful commit lookup, the
+known commit is retained with unknown modified state/paths. Paths identify
+which files were involved, not their contents; no diff or file-content hash is
+claimed.
+
+`build_info()` remains cached at first use per process to avoid running Git on
+every preview. `snapshot_scope: "process_first_use"` makes this explicit, and
+`snapshot_at` records the UTC start of that observation. It is not the acquisition
+timestamp or proof of exactly which modules/binary bytes were loaded; the Git
+commands are not an atomic filesystem snapshot. Restart the server after source
+changes. This patch does not refresh an already-running server's cached record.
+
+Older captures with only a commit and boolean remain valid and unchanged.
+Their modified paths cannot be reconstructed reliably from the current tree or
+later Git history. Optional fields extend the v1 schema without a format bump.
+For the status/path convention, see [Git's porcelain v1 documentation](https://git-scm.com/docs/git-status#_porcelain_format_version_1).
+
 ## Units and coordinates
 
 Images use x increasing right and y increasing down, with `(0, 0)` at the acquired top-left pixel. RGGB means red at even x/even y and blue at odd x/odd y. Marker coordinates are image pixels, independent of viewport zoom/pan. Types are `line`, `rectangle`, `circle` and `point`; each has an ID, label and `a`/`b` points. A circle uses `a` as its center and `b` on its radius; a point uses coincident endpoints. Rectangle dimensions and areas are derived from opposite corners.
