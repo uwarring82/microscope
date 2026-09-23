@@ -1,0 +1,20 @@
+{
+  "@context": "https://doi.org/10.5063/schema/codemeta-2.0",
+  "@type": "SoftwareSourceCode",
+  "name": "Di-Li microscope workspace",
+  "version": "0.2.0",
+  "identifier": "https://github.com/uwarring82/microscope",
+  "codeRepository": "https://github.com/uwarring82/microscope",
+  "url": "https://github.com/uwarring82/microscope",
+  "description": "Experimental native macOS SDK and local microscope inspection workspace with raw frame retention, replayable sessions, spatial calibration, editable markers, FITS and inspection PNG exports.",
+  "license": "https://spdx.org/licenses/MIT.html",
+  "dateCreated": "2026-09-23",
+  "dateModified": "2026-09-23",
+  "programmingLanguage": ["C", "Python", "JavaScript"],
+  "operatingSystem": "macOS",
+  "runtimePlatform": "Python 3.10+",
+  "softwareRequirements": ["Clang", "libusb 1.0", "Modern browser", "Node.js for tests only"],
+  "keywords": ["microscopy", "optics", "FITS", "raw imaging", "FAIR", "macOS"],
+  "author": [{"@type": "Person", "givenName": "Ulrich", "familyName": "Warring"}],
+  "developmentStatus": "experimental"
+}

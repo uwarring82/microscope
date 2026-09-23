@@ -3,6 +3,7 @@
 import argparse
 import json
 import platform
+import re
 from datetime import datetime, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -12,6 +13,7 @@ from camera import status
 from acquisition import Acquisition
 from dili import CameraError
 from replay import ReplayAcquisition
+from captures import CaptureStore
 
 ROOT = Path(__file__).resolve().parent / "web"
 ASSETS = {
@@ -20,6 +22,8 @@ ASSETS = {
     "/geometry.js": ("geometry.js", "text/javascript; charset=utf-8"),
     "/style.css": ("style.css", "text/css; charset=utf-8"),
 }
+for module in ('api', 'markers', 'overlays', 'viewer', 'inspection', 'calibration-ui', 'exports'):
+    ASSETS[f'/{module}.js'] = (f'{module}.js', 'text/javascript; charset=utf-8')
 
 
 def acquisition_report(service):
@@ -49,6 +53,18 @@ class Handler(BaseHTTPRequestHandler):
         if self.headers.get("Host") not in self.server.allowed_hosts:
             self.send_error(403)
             return
+        try:
+            self.get_route()
+        except (ValueError, KeyError, TypeError) as error:
+            self.respond(json.dumps({'error': str(error)}).encode(), 'application/json', 400)
+        except FileNotFoundError:
+            self.respond(b'{"error":"Saved item not found"}', 'application/json', 404)
+        except CameraError as error:
+            self.respond(json.dumps({'error': str(error)}).encode(), 'application/json', 409)
+        except OSError as error:
+            self.respond(json.dumps({'error': f'Cannot read local files: {error}'}).encode(), 'application/json', 500)
+
+    def get_route(self):
         path = urlsplit(self.path).path
         response_headers = {}
         if path == "/api/status":
@@ -61,6 +77,9 @@ class Handler(BaseHTTPRequestHandler):
                 response_headers['X-Camera-Display'] = metadata['display_mode']
                 response_headers['X-Camera-White-Balance'] = json.dumps(metadata['white_balance_gains'])
                 response_headers['X-Camera-Source'] = metadata['source_type']
+                response_headers['X-Frame-ID'] = metadata['frame_id']
+                response_headers['X-Raw-Saturated-Percent'] = str(metadata['raw_statistics']['saturated_percent'])
+                response_headers['X-Raw-Focus'] = str(metadata['raw_statistics']['focus'])
                 if metadata.get('recorded_file'):
                     response_headers['X-Camera-Recorded-File'] = metadata['recorded_file']
                     response_headers['X-Camera-Exposure-Lines'] = str(metadata['exposure_lines'])
@@ -68,6 +87,23 @@ class Handler(BaseHTTPRequestHandler):
                 self.respond(json.dumps({'error': str(error)}).encode(), 'application/json', 409)
                 return
             content_type = 'image/png'
+        elif path == '/api/sessions':
+            payload = json.dumps(self.server.captures.list_sessions()).encode()
+            content_type = 'application/json'
+        elif path == '/api/profiles':
+            payload = json.dumps(self.server.captures.profiles()).encode()
+            content_type = 'application/json'
+        elif re.fullmatch(r'/api/frames/[a-f0-9]{32}', path):
+            _, metadata = self.server.acquisition.retained.get(path.rsplit('/', 1)[1])
+            payload = json.dumps(metadata).encode()
+            content_type = 'application/json'
+        elif match := re.fullmatch(r'/api/sessions/(session-[a-zA-Z0-9-]+)/(capture-[a-f0-9]{32})(?:/([a-z.-]+))?', path):
+            session_id, capture_id, kind = match.groups()
+            if kind:
+                payload, content_type = self.server.captures.asset(session_id, capture_id, kind)
+            else:
+                payload = json.dumps(self.server.captures.get(session_id, capture_id)).encode()
+                content_type = 'application/json'
         elif path in ASSETS:
             filename, content_type = ASSETS[path]
             payload = (ROOT / filename).read_bytes()
@@ -88,14 +124,26 @@ class Handler(BaseHTTPRequestHandler):
             self.send_error(415)
             return
         try:
+            path = urlsplit(self.path).path
             length = int(self.headers.get('Content-Length', '0'))
-            if not 0 < length <= 1024:
+            limit = 32*1024*1024 if path == '/api/export/png' else 256*1024 if path in ('/api/capture', '/api/annotations', '/api/profiles') else 1024
+            if not 0 < length <= limit:
                 raise ValueError('Invalid request length')
             data = json.loads(self.rfile.read(length))
             if not isinstance(data, dict):
                 raise ValueError('Expected a JSON object')
-            path = urlsplit(self.path).path
-            if path == '/api/camera/start':
+            if path == '/api/capture':
+                frame, metadata = self.server.acquisition.retained.get(data.get('frame_id'))
+                result = self.server.captures.capture(frame, metadata, data)
+            elif path == '/api/annotations':
+                result = self.server.captures.update(data['session_id'], data['capture_id'], data)
+            elif path == '/api/profiles':
+                result = self.server.captures.create_profile(data)
+            elif path == '/api/export/fits':
+                result = self.server.captures.export_fits(data['session_id'], data['capture_id'])
+            elif path == '/api/export/png':
+                result = self.server.captures.save_png(data['session_id'], data['capture_id'], data)
+            elif path == '/api/camera/start':
                 result = self.server.acquisition.start()
             elif path == '/api/camera/stop':
                 result = self.server.acquisition.stop()
@@ -118,11 +166,17 @@ class Handler(BaseHTTPRequestHandler):
             else:
                 self.send_error(404)
                 return
-        except (ValueError, UnicodeDecodeError) as error:
+        except (ValueError, UnicodeDecodeError, KeyError, TypeError) as error:
             self.respond(json.dumps({'error': str(error)}).encode(), 'application/json', 400)
             return
         except CameraError as error:
             self.respond(json.dumps({'error': str(error)}).encode(), 'application/json', 409)
+            return
+        except FileNotFoundError:
+            self.respond(b'{"error":"Saved item not found"}', 'application/json', 404)
+            return
+        except OSError as error:
+            self.respond(json.dumps({'error': f'Cannot save local files: {error}'}).encode(), 'application/json', 500)
             return
         self.respond(json.dumps(result).encode(), 'application/json')
 
@@ -140,7 +194,7 @@ class Handler(BaseHTTPRequestHandler):
         self.wfile.write(payload)
 
 
-def make_server(port, replay=None):
+def make_server(port, replay=None, sessions=None):
     acquisition = ReplayAcquisition(replay) if replay else Acquisition()
     try:
         server = ThreadingHTTPServer(("127.0.0.1", port), Handler)
@@ -150,6 +204,7 @@ def make_server(port, replay=None):
     actual_port = server.server_address[1]
     server.allowed_hosts = {f"127.0.0.1:{actual_port}", f"localhost:{actual_port}"}
     server.acquisition = acquisition
+    server.captures = CaptureStore(sessions or ROOT.parent/'sessions')
     return server
 
 
@@ -157,8 +212,9 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--port", type=int, default=8765)
     parser.add_argument("--replay", type=Path, help="Replay a raw dataset directory or manifest, without USB access")
+    parser.add_argument('--sessions', type=Path, help='Local inspection session directory (default: sessions/)')
     args = parser.parse_args()
-    with make_server(args.port, args.replay) as server:
+    with make_server(args.port, args.replay, args.sessions) as server:
         print(f"Microscope workspace: http://127.0.0.1:{server.server_address[1]}", flush=True)
         print("Offline recorded data · no USB access." if args.replay else "Experimental native SDK · camera capture.", flush=True)
         try:

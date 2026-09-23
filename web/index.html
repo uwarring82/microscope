@@ -1,83 +1,381 @@
 <!doctype html>
 <html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Di-Li · Microscope workspace</title>
-  <link rel="stylesheet" href="/style.css">
-  <script type="module" src="/app.js"></script>
-</head>
-<body>
-  <header class="topbar">
-    <div class="brand"><span class="brand-mark" aria-hidden="true">◎</span><div><strong>Microscope</strong><span>DI-LI · IMAGING WORKSPACE</span></div></div>
-    <div class="connection"><span id="status-dot" class="dot"></span><span id="connection-text" role="status">Checking camera…</span><button id="refresh" class="icon-button" title="Refresh USB status" aria-label="Refresh USB status">↻</button></div>
-    <button id="open-image" class="primary">Open image <span aria-hidden="true">↗</span></button>
-    <input id="image-file" type="file" accept="image/png,image/jpeg,image/webp,image/bmp" hidden>
-  </header>
-
-  <main>
-    <aside class="sidebar">
-      <section>
-        <div class="section-title"><h2>Camera</h2><span class="tag">5 MP</span></div>
-        <h3>Di-Li microscope camera</h3>
-        <p class="subtle">5MP-B CMOS · USB 2.0</p>
-        <div class="notice"><span class="notice-title" id="device-state">Checking connection</span><p id="device-message">Reading USB device information…</p></div>
-        <button id="live-view" class="wide" disabled>▶ Start live view</button>
-        <details><summary>Connection details</summary><dl id="device-details"><dt>USB ID</dt><dd>0547:c004</dd></dl><button id="diagnostics" class="text-button">Save diagnostic report ↓</button></details>
-      </section>
-      <section>
-        <div class="section-title"><h2>Acquisition</h2><span class="subtle small">Experimental</span></div>
-        <label id="recording-field" hidden>Recording<select id="recording"></select></label>
-        <fieldset id="acquisition-controls" disabled>
-          <label>Resolution<select id="resolution"><option value="1280x960">1280 × 960 · preview</option><option value="2592x1944">2592 × 1944 · full 5 MP</option></select></label>
-          <label>Exposure <span id="exposure-value">500 lines</span><input id="exposure" type="range" min="1" max="3000" value="500" aria-label="Exposure in sensor lines"></label>
-          <label>Sensor gain <span id="gain-value">40</span><input id="gain" type="range" min="1" max="70" value="40" aria-label="Sensor gain register setting"></label>
-        </fieldset>
-        <p id="acquisition-note" class="small subtle">Exposure is in sensor lines; its duration changes with resolution.</p>
-        <fieldset id="color-controls" disabled>
-          <label>Display<select id="display-mode"><option value="color">Color · RGB</option><option value="raw">Raw sensor · grayscale</option></select></label>
-          <div class="button-row"><button id="white-balance" title="Fill the view with a neutral grey/white reference first">Set white balance</button><button id="reset-wb">Reset</button></div>
-          <p id="wb-values" class="small subtle">RGB gains · 1.00 / 1.00 / 1.00</p>
-        </fieldset>
-        <p class="small subtle">Balance using a neutral grey/white reference filling the view. Gains stay fixed until changed. Color is uncalibrated; raw data is unchanged.</p>
-      </section>
-      <section>
-        <div class="section-title"><h2>Measurement</h2><span id="scale-tag" class="tag">PIXELS</span></div>
-        <p class="small subtle">Draw a line to measure a feature or calibrate against a stage micrometer.</p>
-        <div class="button-row"><button id="measure" disabled aria-pressed="false">↗ Draw line</button><button id="clear" disabled>Clear</button></div>
-        <output id="measurement" class="measurement">— <small>px</small></output>
-        <label for="known-distance">Known line length (µm)</label>
-        <div class="button-row"><input id="known-distance" type="number" min="0.000001" step="any" placeholder="e.g. 100" disabled><button id="calibrate" disabled>Set scale</button></div>
-        <p id="calibration-note" class="small subtle">No calibration. Measurements are in image pixels.</p>
-        <button id="reset-scale" class="text-button" disabled>Reset calibration</button>
-      </section>
-    </aside>
-
-    <div class="workspace">
-      <div class="workspace-heading"><div><span class="eyebrow">IMAGE VIEWER</span><h1 id="image-title">Your specimen, in focus.</h1></div><span id="source-tag" class="source-tag">NO IMAGE</span></div>
-      <div class="viewer-toolbar">
-        <div class="button-row"><button id="fit" disabled>Fit</button><button id="actual" disabled>1:1</button><button id="zoom-out" disabled aria-label="Zoom out">−</button><output id="zoom-value">—</output><button id="zoom-in" disabled aria-label="Zoom in">+</button></div>
-        <div class="button-row"><button id="crosshair" disabled aria-pressed="false">⊹ Crosshair</button><button id="export" disabled>Save PNG ↓</button></div>
-      </div>
-      <div class="stage" id="stage">
-        <canvas id="viewer" aria-label="Microscope image viewer. Use Draw line, then drag across the image to measure." hidden></canvas>
-        <div class="empty" id="empty">
-          <div class="lens" aria-hidden="true"><div><span>+</span></div></div>
-          <h2 id="empty-title">Ready for an image</h2>
-          <p id="empty-message">Open a microscope image to inspect and measure it.<br>Start live view to inspect the connected camera.</p>
-          <button id="empty-open">Open image</button>
-          <span class="small subtle">PNG, JPEG, WebP, or BMP · processed locally</span>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Di-Li · Microscope workspace</title>
+    <link rel="stylesheet" href="/style.css" />
+    <script type="module" src="/app.js"></script>
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true">◎</span>
+        <div>
+          <strong>Microscope</strong><span>DI-LI · IMAGING WORKSPACE</span>
         </div>
-        <div id="image-hint" class="image-hint" hidden>Scroll to zoom · Drag to pan</div>
       </div>
-      <div class="image-status"><span id="dimensions">No image loaded</span><span id="cursor-value">Local workspace · images stay on this device</span></div>
-      <div class="analysis-panel">
-        <div class="histogram-wrap"><div class="section-title"><h2>Intensity histogram</h2><span class="subtle small">RGB → luminance</span></div><canvas id="histogram" width="480" height="76" aria-label="Image luminance histogram"></canvas><div class="axis"><span>0</span><span>128</span><span>255</span></div></div>
-        <div class="image-facts"><div><span>Image size</span><strong id="image-size">—</strong></div><div><span>Mean intensity</span><strong id="mean">—</strong></div><div><span>Calibration</span><strong id="scale-value">Not set</strong></div></div>
-        <p class="analysis-note">Calibrate separately for each objective, optical zoom setting, and image resolution. Opening a new image resets the scale.</p>
+      <div class="connection">
+        <span id="status-dot" class="dot"></span
+        ><span id="connection-text" role="status">Checking camera…</span
+        ><button
+          id="refresh"
+          class="icon-button"
+          title="Refresh USB status"
+          aria-label="Refresh USB status"
+        >
+          ↻
+        </button>
       </div>
-      <p id="feedback" role="status" aria-live="polite"></p>
-    </div>
-  </main>
-</body>
+      <button id="open-image" class="primary">
+        Open image <span aria-hidden="true">↗</span>
+      </button>
+      <input
+        id="image-file"
+        type="file"
+        accept="image/png,image/jpeg,image/webp,image/bmp"
+        hidden
+      />
+    </header>
+
+    <main>
+      <aside class="sidebar">
+        <section>
+          <div class="section-title">
+            <h2>Camera</h2>
+            <span class="tag">5 MP</span>
+          </div>
+          <h3>Di-Li microscope camera</h3>
+          <p class="subtle">5MP-B CMOS · USB 2.0</p>
+          <div class="notice">
+            <span class="notice-title" id="device-state"
+              >Checking connection</span
+            >
+            <p id="device-message">Reading USB device information…</p>
+          </div>
+          <button id="live-view" class="wide" disabled>
+            ▶ Start live view
+          </button>
+          <details>
+            <summary>Connection details</summary>
+            <dl id="device-details">
+              <dt>USB ID</dt>
+              <dd>0547:c004</dd>
+            </dl>
+            <button id="diagnostics" class="text-button">
+              Save diagnostic report ↓
+            </button>
+          </details>
+        </section>
+        <section>
+          <div class="section-title">
+            <h2>Acquisition</h2>
+            <span class="subtle small">Experimental</span>
+          </div>
+          <label id="recording-field" hidden
+            >Recording<select id="recording"></select
+          ></label>
+          <fieldset id="acquisition-controls" disabled>
+            <label
+              >Resolution<select id="resolution">
+                <option value="1280x960">1280 × 960 · preview</option>
+                <option value="2592x1944">2592 × 1944 · full 5 MP</option>
+              </select></label
+            >
+            <label
+              >Exposure <span id="exposure-value">500 lines</span
+              ><input
+                id="exposure"
+                type="range"
+                min="1"
+                max="3000"
+                value="500"
+                aria-label="Exposure in sensor lines"
+            /></label>
+            <label
+              >Sensor gain <span id="gain-value">40</span
+              ><input
+                id="gain"
+                type="range"
+                min="1"
+                max="70"
+                value="40"
+                aria-label="Sensor gain register setting"
+            /></label>
+          </fieldset>
+          <p id="acquisition-note" class="small subtle">
+            Exposure is in sensor lines; its duration changes with resolution.
+          </p>
+          <fieldset id="color-controls" disabled>
+            <label
+              >Display<select id="display-mode">
+                <option value="color">Color · RGB</option>
+                <option value="raw">Raw sensor · grayscale</option>
+              </select></label
+            >
+            <div class="button-row">
+              <button
+                id="white-balance"
+                title="Fill the view with a neutral grey/white reference first"
+              >
+                Set white balance</button
+              ><button id="reset-wb">Reset</button>
+            </div>
+            <p id="wb-values" class="small subtle">
+              RGB gains · 1.00 / 1.00 / 1.00
+            </p>
+          </fieldset>
+          <p class="small subtle">
+            Balance using a neutral grey/white reference filling the view. Gains
+            stay fixed until changed. Color is uncalibrated; raw data is
+            unchanged.
+          </p>
+        </section>
+        <section>
+          <div class="section-title">
+            <h2>Spatial calibration</h2>
+            <span class="tag">µm / px</span>
+          </div>
+          <label
+            >Objective<input
+              id="objective"
+              placeholder="e.g. 10× objective"
+              maxlength="120"
+          /></label>
+          <label
+            >Optical configuration<input
+              id="optical-configuration"
+              placeholder="Adapter / zoom / illumination"
+              maxlength="120"
+          /></label>
+          <label
+            >Calibration profile<select id="profile">
+              <option value="">Uncalibrated · pixels</option>
+            </select></label
+          >
+          <p id="profile-detail" class="small subtle">
+            Confirm the objective manually before selecting a profile.
+          </p>
+          <details>
+            <summary>Create a profile from a stage micrometer</summary>
+            <p class="small subtle">
+              Capture the reference, draw and select a line across a known
+              interval. Add at least three intervals. Use several divisions and
+              different lengths.
+            </p>
+            <label
+              >Known interval (µm)<input
+                id="known-distance"
+                type="number"
+                min="0.000001"
+                step="any"
+                placeholder="e.g. 100"
+            /></label>
+            <div class="button-row">
+              <button id="add-reference">Add selected line</button
+              ><button id="clear-references">Clear</button>
+            </div>
+            <p id="reference-count" class="small subtle">
+              No reference intervals yet.
+            </p>
+            <label
+              >Profile name<input
+                id="profile-name"
+                placeholder="10× · reflected light"
+                maxlength="120"
+            /></label>
+            <button id="save-profile" class="wide" disabled>
+              Fit and save profile
+            </button>
+          </details>
+        </section>
+      </aside>
+
+      <div class="workspace">
+        <div class="workspace-heading">
+          <div>
+            <span class="eyebrow">IMAGE VIEWER</span>
+            <h1 id="image-title">Your specimen, in focus.</h1>
+          </div>
+          <span id="source-tag" class="source-tag">NO IMAGE</span>
+        </div>
+        <div class="capture-bar">
+          <label
+            >Session<input
+              id="session-name"
+              value="Lab inspection"
+              maxlength="120"
+          /></label>
+          <label
+            >Sample<input
+              id="sample-id"
+              placeholder="Specimen or chip ID"
+              maxlength="120"
+          /></label>
+          <button id="new-session">New session</button
+          ><button id="capture-frame" class="primary" disabled>
+            Capture &amp; freeze
+          </button>
+        </div>
+        <p id="calibration-banner" class="calibration-banner">UNCALIBRATED</p>
+        <div class="viewer-toolbar">
+          <div class="button-row">
+            <button id="fit" disabled>Fit</button
+            ><button id="actual" disabled>1:1</button
+            ><button id="zoom-out" disabled aria-label="Zoom out">−</button
+            ><output id="zoom-value">—</output
+            ><button id="zoom-in" disabled aria-label="Zoom in">+</button>
+          </div>
+          <div class="button-row">
+            <button id="crosshair" disabled aria-pressed="false">
+              ⊹ Crosshair
+            </button>
+          </div>
+        </div>
+        <div class="stage" id="stage">
+          <canvas
+            id="viewer"
+            aria-label="Microscope image viewer. Use Draw line, then drag across the image to measure."
+            hidden
+          ></canvas>
+          <div class="empty" id="empty">
+            <div class="lens" aria-hidden="true">
+              <div><span>+</span></div>
+            </div>
+            <h2 id="empty-title">Ready for an image</h2>
+            <p id="empty-message">
+              Open a microscope image to inspect and measure it.<br />Start live
+              view to inspect the connected camera.
+            </p>
+            <button id="empty-open">Open image</button>
+            <span class="small subtle"
+              >PNG, JPEG, WebP, or BMP · processed locally</span
+            >
+          </div>
+          <div id="image-hint" class="image-hint" hidden>
+            Scroll to zoom · Drag to pan
+          </div>
+        </div>
+        <div class="image-status">
+          <span id="dimensions">No image loaded</span
+          ><span id="cursor-value"
+            >Local workspace · images stay on this device</span
+          >
+        </div>
+        <div class="analysis-panel">
+          <div class="histogram-wrap">
+            <div class="section-title">
+              <h2>Intensity histogram</h2>
+              <span id="histogram-label" class="subtle small"
+                >Raw sensor DN</span
+              >
+            </div>
+            <canvas
+              id="histogram"
+              width="480"
+              height="76"
+              aria-label="Image luminance histogram"
+            ></canvas>
+            <div class="axis">
+              <span>0</span><span>128</span><span>255</span>
+            </div>
+          </div>
+          <div class="image-facts">
+            <div><span>Image size</span><strong id="image-size">—</strong></div>
+            <div><span>Mean intensity</span><strong id="mean">—</strong></div>
+            <div>
+              <span>Calibration</span><strong id="scale-value">Not set</strong>
+            </div>
+          </div>
+          <div class="analysis-note">
+            <p id="clipping-badge">Raw clipping unavailable</p>
+            <p>Focus · central raw green <strong id="focus-value">—</strong></p>
+            <p class="small">
+              Focus is a relative gradient score, dependent on exposure and
+              specimen. Raw clipping is measured before white balance.
+            </p>
+          </div>
+        </div>
+        <p id="feedback" role="status" aria-live="polite"></p>
+        <div class="inspection-panels">
+          <section>
+            <div class="section-title">
+              <h2>Markers &amp; measurements</h2>
+              <span class="small subtle">Image coordinates</span>
+            </div>
+            <fieldset id="marker-controls" disabled>
+              <label
+                >Tool<select id="marker-tool">
+                  <option value="pan">Pan image</option>
+                  <option value="select">Select / move / edit endpoints</option>
+                  <option value="line">Distance line</option>
+                  <option value="rectangle">Rectangle / area</option>
+                  <option value="circle">Circle / diameter</option>
+                  <option value="point">Point marker</option>
+                </select></label
+              >
+              <div class="button-row">
+                <button id="undo-marker" disabled>Undo</button
+                ><button id="redo-marker" disabled>Redo</button
+                ><button id="delete-marker" disabled>Delete selected</button>
+              </div>
+              <label
+                >Selected label<input
+                  id="marker-label"
+                  maxlength="120"
+                  disabled
+              /></label>
+              <div id="marker-list" class="marker-list"></div>
+            </fieldset>
+          </section>
+          <section>
+            <div class="section-title">
+              <h2>Inspection record</h2>
+              <span id="save-state" class="small subtle"
+                >Capture a frame first</span
+              >
+            </div>
+            <label
+              >Notes<textarea
+                id="notes"
+                rows="3"
+                maxlength="10000"
+                placeholder="Surface, defects, illumination, observations…"
+              ></textarea>
+            </label>
+            <button id="save-inspection" disabled>
+              Save notes &amp; markers
+            </button>
+            <label
+              >PNG layout<select id="export-kind">
+                <option value="inspection.png">
+                  Inspection sheet · settings, raw histogram, markers
+                </option>
+                <option value="annotated.png">
+                  Annotated image · markers and scale
+                </option>
+                <option value="image-only.png">Image only</option>
+              </select></label
+            >
+            <div class="button-row">
+              <button id="fits-export" disabled>Save raw FITS</button
+              ><button id="png-export" disabled>Save PNG</button>
+            </div>
+            <p class="small subtle">
+              Files are saved in the session folder on this computer. Exports
+              use the saved capture and its annotation revision.
+            </p>
+            <a id="last-export" hidden target="_blank" rel="noopener"></a>
+          </section>
+        </div>
+        <details class="saved-sessions">
+          <summary>Saved sessions and captures</summary>
+          <button id="refresh-sessions" class="text-button">
+            Refresh list
+          </button>
+          <div id="session-gallery" class="small subtle"></div>
+        </details>
+      </div>
+    </main>
+  </body>
 </html>

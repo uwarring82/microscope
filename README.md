@@ -2,6 +2,8 @@
 
 A local web UI and experimental native macOS SDK for the USB-connected Di-Li **5MP-B CMOS Camera**.
 
+[Development logbook](docs/logbook.md) · [Session/data format](docs/data-format.md) · [FAIR practice](docs/fair.md) · [Citation](CITATION.cff) · [MIT license](LICENSE)
+
 ```sh
 make                       # build the native SDK; uses installed libusb
 python3 server.py
@@ -15,7 +17,20 @@ Open **http://127.0.0.1:8765**, then click **Start live view**. Stop the server 
 - Full-resolution RGB color preview with fixed white balance from a neutral reference, plus a raw grayscale display option; stop and freeze for measurements or PNG export.
 - Python and C APIs for capture and settings. [SDK usage and protocol notes](docs/native-sdk.md).
 - Open local PNG, JPEG, WebP, or BMP images; zoom, pan, fit, RGB readout, crosshair, and histogram.
-- Draw measurement lines, calibrate with a known distance in micrometers, and export an image with the measurement.
+- Capture the exact displayed raw frame into a durable, replayable session, with settings, SHA-256, timestamps and provenance.
+- Persistent calibration profiles per objective/configuration/resolution, with a multi-interval fit and its standard error.
+- Editable distance lines, rectangles/areas, circles/diameters and points; labels, undo/redo and saved annotations.
+- Raw FITS plus image-only, annotated and inspection-sheet PNG exports with saved settings, raw histogram, measurements and notes.
+- Raw clipping and a relative central-green focus indicator, computed before white balance.
+
+## Quick inspection workflow
+
+1. Start the preview (or offline recording), enter a session name and sample ID, and confirm the objective/configuration. Select a matching calibration profile, or keep the visible **UNCALIBRATED** state.
+2. Click **Capture & freeze**. The server saves the exact displayed raw frame, its original processing settings and its metadata into `sessions/session-…/`. It never substitutes a new frame when saving.
+3. Select a marker tool; draw in the image, label markers, and add notes. **Select / move / edit endpoints** edits existing shapes. Save notes and markers; the session can be reopened from **Saved sessions and captures**.
+4. **Save raw FITS** or select a PNG layout and **Save PNG**. Export automatically saves pending edits. Files and metadata remain in the session folder; the UI provides a link to the saved export.
+
+To create a calibration, capture a stage micrometer, draw/select a line and enter its known length. Add at least three intervals in **Create a profile from a stage micrometer**, then fit and save the named profile. The displayed uncertainty is fit precision only, not a complete metrology uncertainty. No physical calibration is provided with this source release.
 
 **Illuminated capture verified:** scratches on an aluminium optical breadboard are clearly visible, and an exposure sweep produced the expected change in brightness. Color reconstruction now resolves the red, green, and blue subpixels of a smartphone showing white. **Prototype limitations:** Absolute orientation, quantitative color accuracy, and exposure timing remain uncalibrated. Color uses bilinear RGGB demosaicing; raw grayscale retains the original sensor values. There is no simulated feed or fallback to another camera.
 
@@ -33,7 +48,7 @@ Click **Play recording**. The UI labels the source **Offline replay** and loops 
 
 To return to hardware, stop the replay server with Ctrl-C and run `python3 server.py` without `--replay`. There is no automatic fallback between hardware and recordings.
 
-Calibration applies to the current image and optical setup. Opening another image resets calibration. Changing objective, optical zoom, camera resolution, binning, or resizing requires recalibration. Use a stage micrometer; nominal objective magnification alone does not establish an accurate scale.
+Calibration profiles are matched to the exact image resolution and manually selected objective/configuration. Opening a saved inspection restores its calibration snapshot; changing resolution never rescales a profile by a presumed binning ratio. Use a stage micrometer; nominal objective magnification alone does not establish an accurate scale.
 
 ## Hardware investigation, 2026-09-23
 
@@ -70,3 +85,7 @@ python3 -m examples.capture          # minimal Python SDK example
 ```
 
 `sdk/dili.h` is the native API, `sdk/dili.c` implements the USB driver, `sdk/color.c` provides software color processing, and `dili.py` is the Python binding/CLI. `acquisition.py` serializes camera access for `server.py`; `web/` contains the UI. `camera.py` remains a separate read-only USB discovery module. The server exposes local start/stop/settings/resolution/processing/white-balance and PNG frame endpoints; mutations require a same-origin JSON request with `X-Microscope-Client: local-ui`. The camera closes after 30 seconds without frame requests.
+
+`frames.py` retains preview frame identities; `captures.py`, `calibration.py` and `fits_export.py` implement durable inspection records. Browser viewing, markers, calibration and export are separate modules. Runtime Python has no pip dependencies; `make test` uses generated fixtures and never opens hardware. See [contribution guidance](CONTRIBUTING.md) and update the [logbook](docs/logbook.md) with consequential changes and validation.
+
+The code and documentation use MIT. Captured data is local and separately licensed by its owner. The public repository includes a versioned JSON Schema, CITATION.cff and CodeMeta; no specimen datasets or vendor executables are distributed. A DOI/archive deposit has not yet been established.

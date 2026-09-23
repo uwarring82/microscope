@@ -2,6 +2,7 @@
 import threading
 import time
 from dili import Camera, CameraError, available, RESOLUTIONS, color_gains
+from frames import FrameCache
 
 
 class Acquisition:
@@ -17,6 +18,7 @@ class Acquisition:
         self.white_balance_gains = (1.0, 1.0, 1.0)
         self.last_access = 0
         self.frames = 0
+        self.retained = FrameCache()
         self.shutdown = threading.Event()
         self.monitor = threading.Thread(target=self._idle_watch, daemon=True)
         self.monitor.start()
@@ -132,6 +134,7 @@ class Acquisition:
             metadata = self._frame_metadata(frame)
         payload = frame.png(mode, gains)
         metadata.update(display_mode=mode, white_balance_gains=gains)
+        metadata = self.retained.add(frame, metadata)
         return (payload, metadata) if with_metadata else payload
 
     def _frame_metadata(self, frame):

@@ -113,13 +113,14 @@ class AcquisitionTests(unittest.TestCase):
         service = Acquisition()
         try:
             service.start()
-            frame = camera.return_value.read.return_value
-            frame.png.return_value = b'encoded PNG'
+            frame = Frame(bytes([200, 100, 100, 50] * 4), 'test', width=4, height=4)
+            camera.return_value.read.return_value = frame
             service.set_processing({'display_mode': 'color', 'white_balance_gains': [0.5, 1, 2]})
-            payload, metadata = service.read_png(with_metadata=True)
+            with patch('dili.Frame.png', return_value=b'encoded PNG') as encode:
+                payload, metadata = service.read_png(with_metadata=True)
             self.assertEqual(payload, b'encoded PNG')
             self.assertEqual(metadata['white_balance_gains'], (0.5, 1, 2))
-            frame.png.assert_called_once_with('color', (0.5, 1, 2))
+            encode.assert_called_once_with('color', (0.5, 1, 2))
             camera.return_value.set_gain.assert_not_called()
             camera.return_value.set_exposure_lines.assert_not_called()
             with self.assertRaises(ValueError):

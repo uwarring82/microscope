@@ -20,6 +20,7 @@ class RawDataset:
         self.gains = color_gains(manifest.get('white_balance_gains', [1, 1, 1]))
         self.description = str(manifest.get('description', 'Recorded microscope frames'))
         self.groups = []
+        self.records = {}
         groups_by_settings = {}
         rows = manifest.get('frames')
         if not isinstance(rows, list) or not rows:
@@ -45,6 +46,7 @@ class RawDataset:
             if hashlib.sha256(raw).hexdigest() != row['sha256']:
                 raise ValueError(f'Raw checksum mismatch: {filename}')
             frame = Frame(raw, str(row['captured_at']), width, height)
+            self.records[filename] = row
             key = (resolution, exposure, gain)
             if key not in groups_by_settings:
                 group = {'id': str(len(self.groups)), 'resolution': resolution,
@@ -133,4 +135,8 @@ class ReplayAcquisition(Acquisition):
     def _frame_metadata(self, frame):
         result = super()._frame_metadata(frame)
         result.update(recorded_file=self.camera.last_file, recording_id=self.selected['id'])
+        row = self.dataset.records[self.camera.last_file]
+        result['provenance'] = {'dataset': self.dataset.path.parent.name,
+                                'file': self.camera.last_file, 'sha256': row['sha256'],
+                                'previous': row.get('provenance')}
         return result

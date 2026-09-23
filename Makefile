@@ -20,4 +20,4 @@ test: all artifacts/test-native artifacts/test-color
 	artifacts/test-native
 	artifacts/test-color
 	python3 -m unittest discover -s tests
-	node --test tests/geometry.test.js
+	node --test tests/*.test.js
