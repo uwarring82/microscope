@@ -1,0 +1,10 @@
+{
+  "name": "dili-microscope-workspace",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "python3 server.py",
+    "test": "node --test tests/geometry.test.js"
+  }
+}
+
