@@ -98,3 +98,9 @@ Record consequential implementation decisions, evidence, limitations and follow-
 - Operator confirmed zoom 7. Saved two raw captures per resolution at 20 exposure lines/gain 13; those initial references were dim (primary raw maxima 31 DN in preview and 43 DN at full resolution).
 - Retained the initial frames and added two brighter captures per resolution at 120 lines/gain 13, giving primary maxima 128 DN and 191 DN. All eight zoom-7 frames had zero pixels at 255. Saved exact RAW8, original PNG, raw FITS, acquisition settings, identities/checksums and lab notes. Target bars were visually checked for collection quality; no new spatial fit or resolution measurement was performed.
 - The current series comprises zoom markings 0.58, 2, 4 and 7. The first has provisional profiles; later settings remain explicitly uncalibrated pending the operator-requested analysis phase. The local evidence packet preserves the zoom-1-to-2 correction history, all raw frames and reference sessions, latest annotations/FITS, analysis records and a checksum inventory. No raw images or private paths are published to Git.
+
+
+## 2026-09-23 — Zoom-6 reference collection
+
+- Operator confirmed zoom 6. Saved two independent raw references at each acquisition resolution, with FITS/PNG, settings, identities/checksums and local lab notes. Preview used 120 exposure lines/gain 13; full resolution was reduced to 60 lines/gain 13 to avoid clipping. Primary raw maxima were 163 DN and 135 DN, respectively; all four retained frames had zero pixels at 255.
+- Visually confirmed the target bars and preserved all raw samples. Spatial scale fitting remains deferred; no prior zoom profile was applied. Acquisition was stopped and the operator was told the next setting could be selected.
