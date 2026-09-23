@@ -1,0 +1,2 @@
+# Independent file-format verification only; never required by the SDK/server.
+astropy==8.0.1

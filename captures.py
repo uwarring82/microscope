@@ -66,7 +66,19 @@ class CaptureStore:
     def profiles(self):
         with self.lock:
             path = self.root / 'calibrations.json'
-            return json.loads(path.read_text()) if path.exists() else []
+            if not path.exists():
+                return []
+            document = json.loads(path.read_text())
+            if isinstance(document, list):  # Read v0.2.0 files; migrate on the next profile save.
+                return document
+            if not isinstance(document, dict) or document.get('format') != 'dili-calibrations-v1' or not isinstance(document.get('profiles'), list):
+                raise ValueError('Unsupported calibration storage format')
+            return document['profiles']
+
+    @staticmethod
+    def session_summary(manifest):
+        return {'source_types': sorted({row['source_type'] for row in manifest['frames']}),
+                'resolutions': sorted({row['resolution'] for row in manifest['frames']})}
 
     def _inspection(self, data, metadata, revision):
         objective = text_field(data, 'objective')
@@ -123,6 +135,7 @@ class CaptureStore:
             return {'metadata': json.loads(base.with_suffix('.json').read_text()),
                     'inspection': json.loads(base.with_suffix('.annotations.json').read_text()),
                     'image_url': f'/api/sessions/{session_id}/{capture_id}/image.png',
+                    'session_summary': self.session_summary(manifest),
                     'directory': str(base.parent), 'session_name': manifest['name']}
 
     def update(self, session_id, capture_id, data):
@@ -145,7 +158,8 @@ class CaptureStore:
                     captures.append({'id': row['capture_id'], 'captured_at': row['captured_at'],
                                      'resolution': row['resolution'], 'source_type': row['source_type'],
                                      'sample_id': annotation['sample_id']})
-                result.append({'id': manifest['session_id'], 'name': manifest['name'], 'captures': captures})
+                result.append({'id': manifest['session_id'], 'name': manifest['name'], 'captures': captures,
+                               **self.session_summary(manifest)})
             return result
 
     def create_profile(self, data):
@@ -174,7 +188,7 @@ class CaptureStore:
                        'references': saved_references, **fit_scale(samples)}
             profiles = self.profiles()
             profiles.append(profile)
-            write_json(self.root/'calibrations.json', profiles)
+            write_json(self.root/'calibrations.json', {'format': 'dili-calibrations-v1', 'profiles': profiles})
             return profile
 
     def _raw(self, record):

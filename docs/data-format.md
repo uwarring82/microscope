@@ -19,21 +19,33 @@ The manifest is atomically replaced after all capture files are saved. Each anno
 
 Replay with `python3 server.py --replay sessions/session-…`. The [JSON Schema](../schemas/dili-raw-dataset-v1.schema.json) permits extension fields for compatibility. The loader additionally enforces matching dimensions, exact file byte counts, in-directory filenames and SHA-256 hashes.
 
+Replay uses each frame row's `white_balance_gains`, falling back to the manifest's gains (or unity) for older recordings. A manual white-balance/reset operation overrides those gains until **Use recorded balance** is selected. Switching color/raw display preserves that choice. Served frame metadata records the actual gains and `white_balance_source` (`recorded` or `manual`). Acquisition-setting groups stay independent of display gains, so a loop can faithfully contain different balances.
+
+Sessions may contain multiple resolutions and both camera/replay captures. The API returns `source_types` and `resolutions` in the session inventory and `session_summary` with a saved capture. The UI shows a persistent notice for mixed sessions, including when the next preview capture would create a mixture. Every frame retains its own settings and provenance; replay still groups by resolution, exposure and sensor gain.
+
 ## Units and coordinates
 
 Images use x increasing right and y increasing down, with `(0, 0)` at the acquired top-left pixel. RGGB means red at even x/even y and blue at odd x/odd y. Marker coordinates are image pixels, independent of viewport zoom/pan. Types are `line`, `rectangle`, `circle` and `point`; each has an ID, label and `a`/`b` points. A circle uses `a` as its center and `b` on its radius; a point uses coincident endpoints. Rectangle dimensions and areas are derived from opposite corners.
 
 Exposure is **sensor lines**, gain is **sensor register units**, intensities are **8-bit digital numbers**, and spatial scale is **µm/image pixel**. Host timestamps record read completion in UTC, not hardware exposure start. Replay preserves the original acquisition timestamp and records its dataset/file/SHA-256 provenance. White balance applies only to the derived display. Raw clipping counts sensor values exactly 255; the zero fraction is shown separately and is not interpreted as optical black. The focus score is the mean squared difference between same-phase raw green samples in a central region up to 256 × 256 pixels. It depends on exposure, specimen and sampling; it is not a calibrated optical-resolution measurement.
 
+The sensor's actual saturation level and black offset have not been characterized. The 255-DN fraction can miss saturation below that endpoint; zero percent is not proof of an unsaturated image. A deliberately overexposed hardware sequence is still pending. Prefer 1280 × 960 for responsive focus adjustment: the review measured roughly 0.14 s for raw statistics and 0.37 s for full-resolution PNG encoding on the development Mac, giving about 2 fps, not a guaranteed rate.
+
 ## Spatial calibration
 
 Profiles are stored in `sessions/calibrations.json` and keyed by the exact objective, optical configuration and acquisition resolution. The objective is manually confirmed; it cannot be detected from this camera. No profile is scaled between 1280 × 960 and 2592 × 1944. A profile uses at least three measured stage-micrometer intervals. A least-squares fit through the origin estimates µm/px. The stored standard error describes fit precision only, excluding reference accuracy, field distortion and positioning systematics. Reference endpoints, raw checksums, capture IDs and residuals are retained. The active profile or UNCALIBRATED state is always visible; every export's metadata records the calibration state.
+
+The file envelope is `{"format":"dili-calibrations-v1","profiles":[...]}`; see its [schema](../schemas/dili-calibrations-v1.schema.json). The API continues to return a profile list. Legacy v0.2.0 bare lists are readable and are migrated atomically on the next profile save, preserving existing profiles. Unknown format versions are refused. **Keep and back up every referenced session**, including its raw files and metadata, with the calibration file. IDs/checksums and annotation snapshots cannot reconstruct a deleted reference image. References are not copied to a separate archive by this version. No stage-micrometer profile has yet been physically validated.
 
 ## FITS
 
 Exports follow [FITS 4.0](https://fits.gsfc.nasa.gov/standard40/fits_standard40aa-le.pdf): 80-byte cards and 2880-byte padded header/data blocks; an unsigned 8-bit (`BITPIX=8`) primary image. Sensor rows are preserved byte for byte. `ROWORDER='TOP-DOWN'` and `BAYERPAT='RGGB'` describe the stored array. A viewer drawing axis 2 upward may display it inverted; we deliberately do not flip rows or alter the Bayer phase. The raw SHA-256 is computed on sensor bytes without FITS padding.
 
-Use custom `EXPLINES` and `SENSGAIN`; `EXPTIME` and `GAIN` are not emitted because the corresponding seconds and electrons/ADU are unknown. `DATE-OBS`, `TIMESYS`, and `TIMETYPE` describe the original UTC host-read timestamp. `RAWSHA`, `FRAMEID`, `CAPTID`, `SRCFILE`, `SRCSHA`, `SRCDATA`, `CALPROF`, `SCALEUM` and `SCALERR` retain provenance and calibration. Long strings and full metadata, including annotations, Unicode text and nested provenance, are stored as ASCII-escaped JSON in a one-dimensional unsigned-byte IMAGE extension named `METADATA`.
+Use custom `EXPLINES` and `SENSGAIN`; `EXPTIME` and `GAIN` are not emitted because the corresponding seconds and electrons/ADU are unknown. `DATE-OBS` and `TIMESYS='UTC'` describe the original UTC timestamp; the custom `TSOURCE='HOSTREAD'` explicitly identifies host-read completion, not exposure start. This replaces v0.2.0's `TIMETYPE` keyword in new exports. `RAWSHA`, `FRAMEID`, `CAPTID`, `SRCFILE`, `SRCSHA`, `SRCDATA`, `CALPROF`, `SCALEUM` and `SCALERR` retain provenance and calibration. Long strings and full metadata, including annotations, Unicode text and nested provenance, are stored as ASCII-escaped JSON in a one-dimensional unsigned-byte IMAGE extension named `METADATA`.
+
+That extension is a project convention, **not another specimen image**. Generic FITS viewers may display its bytes as pixels. `CONTENT='JSON-ASCII'` identifies the encoding; with Astropy, decode it using `json.loads(hdus['METADATA'].data.tobytes().decode('ascii'))`. The primary HDU alone is the raw sensor image.
+
+`python -m tools.verify_fits` generates synthetic exports at both resolutions and checks them independently with Astropy, including exact raw bytes and JSON round trips. Install `requirements-validation.txt` in an optional Python 3.12+ environment. Add `--fitsverify` when NASA's separate `fitsverify` executable is installed; CI runs both verifiers. These tools are validation dependencies only, not SDK/server requirements.
 
 ## Local API
 

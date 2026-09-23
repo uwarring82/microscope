@@ -106,6 +106,11 @@
           <p id="acquisition-note" class="small subtle">
             Exposure is in sensor lines; its duration changes with resolution.
           </p>
+          <p class="small subtle">
+            Use 1280 × 960 for responsive focusing. Full 5 MP preview is slower
+            (about 2 fps on the tested Mac); capture full resolution for
+            inspection.
+          </p>
           <fieldset id="color-controls" disabled>
             <label
               >Display<select id="display-mode">
@@ -124,10 +129,12 @@
             <p id="wb-values" class="small subtle">
               RGB gains · 1.00 / 1.00 / 1.00
             </p>
+            <button id="recorded-wb" hidden>Use recorded balance</button>
           </fieldset>
           <p class="small subtle">
-            Balance using a neutral grey/white reference filling the view. Gains
-            stay fixed until changed. Color is uncalibrated; raw data is
+            Balance using a neutral grey/white reference filling the view.
+            Replay uses each frame's recorded gains until Set white balance or
+            Reset selects a manual override. Color is uncalibrated; raw data is
             unchanged.
           </p>
         </section>
@@ -218,6 +225,7 @@
           </button>
         </div>
         <p id="calibration-banner" class="calibration-banner">UNCALIBRATED</p>
+        <p id="session-warning" class="notice small" role="status" hidden></p>
         <div class="viewer-toolbar">
           <div class="button-row">
             <button id="fit" disabled>Fit</button
@@ -292,7 +300,8 @@
             <p>Focus · central raw green <strong id="focus-value">—</strong></p>
             <p class="small">
               Focus is a relative gradient score, dependent on exposure and
-              specimen. Raw clipping is measured before white balance.
+              specimen. The 255-DN fraction is measured before white balance;
+              the sensor's actual saturation level has not yet been validated.
             </p>
           </div>
         </div>

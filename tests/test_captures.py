@@ -68,6 +68,15 @@ class CaptureTests(unittest.TestCase):
         p = self.store.create_profile({'name':'Test only','objective':'10x','optical_configuration':'adapter A','references':refs})
         self.assertAlmostEqual(p['um_per_pixel'], .20035714285714287)
         self.assertGreater(p['fit_standard_error'], 0)
+        path = self.store.root / 'calibrations.json'
+        self.assertEqual(json.loads(path.read_text())['format'], 'dili-calibrations-v1')
+        path.write_text(json.dumps([p]))  # v0.2.0 legacy list is preserved on read.
+        self.assertEqual(self.store.profiles(), [p])
+        self.store.create_profile({'name':'Second fit','objective':'10x','optical_configuration':'adapter A','references':refs})
+        migrated = json.loads(path.read_text())
+        self.assertEqual(migrated['format'], 'dili-calibrations-v1')
+        self.assertEqual(migrated['profiles'][0], p)
+        self.assertEqual(len(migrated['profiles']), 2)
         data = {'revision':1, 'objective':'10x','optical_configuration':'adapter A','calibration_id':p['id'],
                 'markers':[{'id':'line-1','type':'line','label':'gap','a':{'x':2,'y':2},'b':{'x':202,'y':2}}]}
         saved = self.store.update(m['session_id'], m['capture_id'], data)
@@ -101,6 +110,8 @@ class CaptureTests(unittest.TestCase):
         self.assertIn("'TOP-DOWN",keys['ROWORDER'])
         self.assertIn('123',keys['EXPLINES']);self.assertIn('40',keys['SENSGAIN'])
         self.assertNotIn('EXPTIME',keys);self.assertNotIn('GAIN',keys)
+        self.assertNotIn('TIMETYPE', keys)
+        self.assertIn('HOSTREAD', keys['TSOURCE'])
         self.assertIn(m['sha256'],keys['RAWSHA']);self.assertIn('original.raw',keys['SRCFILE'])
         self.assertEqual(fits[offset],0);self.assertEqual(fits[offset+len(self.frame.pixels)-1],255)
 
@@ -121,6 +132,25 @@ class CaptureTests(unittest.TestCase):
             self.store.get('../outside',m['capture_id'])
         with self.assertRaises(ValueError):
             self.store.get(m['session_id'],'../outside')
+
+    def test_unknown_calibration_storage_is_refused(self):
+        (self.store.root/'calibrations.json').write_text(json.dumps({'format':'future-format','profiles':[]}))
+        with self.assertRaisesRegex(ValueError, 'Unsupported calibration'):
+            self.store.profiles()
+
+    def test_mixed_sessions_retain_identity_and_expose_source_resolution_summary(self):
+        first = self.capture()
+        session = first['metadata']['session_id']
+        full = Frame(bytes([70]) * (2592*1944), self.frame.captured_at, 2592, 1944)
+        metadata = self.cache.add(full, {**self.meta, 'source_type':'camera'})
+        second = self.store.capture(full, metadata, {'session_id':session})
+        expected = {'source_types':['camera','replay'], 'resolutions':['1280x960','2592x1944']}
+        self.assertEqual(second['session_summary'], expected)
+        summary = self.store.list_sessions()[0]
+        self.assertEqual({key:summary[key] for key in expected}, expected)
+        self.assertEqual(self.store.get(session, first['metadata']['capture_id'])['metadata'], first['metadata'])
+        dataset = RawDataset(second['directory'])
+        self.assertEqual(len(dataset.groups), 2)
 
 
 class CalibrationTests(unittest.TestCase):

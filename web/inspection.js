@@ -4,8 +4,9 @@ import { inspectionPNG } from "./exports.js";
 import { drawMarkers, drawScaleBar } from "./overlays.js";
 
 export class Inspection {
-  constructor(markers, viewer, calibration, onOpen) {
-    Object.assign(this, { markers, viewer, calibration, onOpen });
+  constructor(markers, viewer, calibration, onOpen, getPreview) {
+    Object.assign(this, { markers, viewer, calibration, onOpen, getPreview });
+    this.sessions = [];
     this.record = null;
     this.dirty = false;
     this.sessionId = null;
@@ -16,6 +17,7 @@ export class Inspection {
     $("new-session").onclick = () => {
       this.sessionId = null;
       $("session-name").value = "Lab inspection";
+      this.render();
       feedback("The next capture will start a new session.");
     };
     $("fits-export").onclick = () =>
@@ -121,6 +123,25 @@ export class Inspection {
     this.render();
   }
   render() {
+    const summary = this.sessions.find((s) => s.id === this.sessionId);
+    const candidate = this.getPreview();
+    const sources = new Set(summary?.source_types || []);
+    const resolutions = new Set(summary?.resolutions || []);
+    if (this.sessionId && candidate && !this.record) {
+      sources.add(candidate.source_type);
+      resolutions.add(candidate.resolution);
+    }
+    const notices = [];
+    if (sources.size > 1)
+      notices.push(
+        "This session mixes camera and replay captures. Each capture keeps its source provenance.",
+      );
+    if (resolutions.size > 1)
+      notices.push(
+        "This session contains multiple resolutions. Replay groups frames by acquisition settings; calibration stays resolution-specific.",
+      );
+    $("session-warning").textContent = notices.join(" ");
+    $("session-warning").hidden = !notices.length;
     const enabled = !!this.record && !this.busy;
     for (const id of ["save-inspection", "fits-export", "png-export"])
       $(id).disabled = !enabled;
@@ -220,6 +241,8 @@ export class Inspection {
   }
   async gallery() {
     const sessions = await request("/api/sessions");
+    this.sessions = sessions;
+    this.render();
     $("session-gallery").replaceChildren();
     if (!sessions.length) {
       $("session-gallery").textContent = "No saved captures yet.";

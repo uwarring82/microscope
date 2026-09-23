@@ -83,6 +83,39 @@ class ReplayTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'byte count'):
             RawDataset(self.folder)
 
+    def test_each_frame_uses_recorded_balance_with_explicit_manual_override(self):
+        self.manifest['frames'][1]['white_balance_gains'] = [2, 1, .5]
+        self.write_manifest()
+        service = ReplayAcquisition(self.folder)
+        self.addCleanup(service.close)
+        service.start()
+        for expected in [(1.2, 1, 1.4), (2, 1, .5), (1.2, 1, 1.4)]:
+            png, meta = service.read_png(with_metadata=True)
+            frame, retained = service.retained.get(meta['frame_id'])
+            self.assertEqual(meta['white_balance_gains'], expected)
+            self.assertEqual(png, frame.png('color', expected))
+            self.assertEqual(retained['white_balance_source'], 'recorded')
+        service.set_processing({'display_mode':'raw', 'white_balance_source':'recorded'})
+        _, meta = service.read_png(with_metadata=True)
+        self.assertEqual(meta['white_balance_gains'], (2, 1, .5))
+        service.set_processing({'display_mode':'color', 'white_balance_gains':[1,1,1]})
+        for _ in range(2):
+            _, meta = service.read_png(with_metadata=True)
+            self.assertEqual(meta['white_balance_gains'], (1,1,1))
+            self.assertEqual(meta['white_balance_source'], 'manual')
+        service.set_processing({'display_mode':'color', 'white_balance_source':'recorded'})
+        service.read_png()
+        _, meta = service.read_png(with_metadata=True)
+        self.assertEqual(meta['white_balance_gains'], (2,1,.5))
+        service.select_recording('1')
+        self.assertEqual(service.state()['white_balance_gains'], (1.2,1,1.4))
+
+    def test_invalid_per_frame_white_balance_is_rejected(self):
+        self.manifest['frames'][1]['white_balance_gains'] = [float('nan'),1,1]
+        self.write_manifest()
+        with self.assertRaises(ValueError):
+            RawDataset(self.folder)
+
     def test_manifest_cannot_reference_raw_files_outside_dataset(self):
         self.manifest['frames'][0]['file'] = '../outside.raw'
         self.write_manifest()

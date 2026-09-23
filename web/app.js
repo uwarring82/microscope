@@ -14,6 +14,7 @@ let report = null,
 let settingsQueue = Promise.resolve(),
   settingsPending = 0,
   processingBusy = false,
+  whiteBalanceSource = "manual",
   whiteBalance = [1, 1, 1];
 let inspection = null,
   calibration = null;
@@ -38,10 +39,16 @@ calibration = new CalibrationUI(
   () => markers.items.find((m) => m.id === markers.selected),
   () => inspection?.changed(),
 );
-inspection = new Inspection(markers, viewer, calibration, async () => {
-  if (inspection.dirty) await inspection.save();
-  await stopOnly();
-});
+inspection = new Inspection(
+  markers,
+  viewer,
+  calibration,
+  async () => {
+    if (inspection.dirty) await inspection.save();
+    await stopOnly();
+  },
+  () => frameMetadata,
+);
 const replayMode = () => report?.acquisition.source_type === "replay";
 
 function controls() {
@@ -121,9 +128,13 @@ async function refreshStatus() {
     }
     if (!processingBusy) {
       whiteBalance = state.white_balance_gains;
+      whiteBalanceSource = state.white_balance_source || "manual";
       $("display-mode").value = state.display_mode;
       processingLabels();
     }
+    $("recorded-wb").hidden = !replay;
+    $("recorded-wb").disabled =
+      processingBusy || whiteBalanceSource === "recorded";
     const details = replay
       ? {
           Source: "Recorded RAW8 RGGB; USB disabled",
@@ -167,6 +178,11 @@ async function refreshStatus() {
 
 function displayMetadata(meta, saved = false) {
   frameMetadata = meta;
+  if (!saved && !processingBusy) {
+    whiteBalance = meta.white_balance_gains;
+    whiteBalanceSource = meta.white_balance_source || "manual";
+    processingLabels();
+  }
   $("image-title").textContent = saved
     ? "Saved inspection"
     : meta.source_type === "replay"
@@ -326,7 +342,7 @@ $("recording").onchange = () =>
   changeSampling("recording", { recording_id: $("recording").value });
 function processingLabels() {
   $("wb-values").textContent =
-    `RGB gains · ${whiteBalance.map((g) => g.toFixed(2)).join(" / ")}`;
+    `RGB gains · ${whiteBalance.map((g) => g.toFixed(2)).join(" / ")}${replayMode() ? ` · ${whiteBalanceSource === "recorded" ? "recorded per frame" : "manual override"}` : ""}`;
 }
 async function processing(actionName, data) {
   if (processingBusy) return;
@@ -335,6 +351,7 @@ async function processing(actionName, data) {
   try {
     const state = await cameraCommand(actionName, data);
     whiteBalance = state.white_balance_gains;
+    whiteBalanceSource = state.white_balance_source || "manual";
     processingLabels();
     feedback(
       "Processing updated for subsequent preview frames. Saved captures retain their original display settings.",
@@ -350,6 +367,12 @@ $("display-mode").onchange = () =>
   processing("processing", {
     display_mode: $("display-mode").value,
     white_balance_gains: whiteBalance,
+    ...(replayMode() ? { white_balance_source: whiteBalanceSource } : {}),
+  });
+$("recorded-wb").onclick = () =>
+  processing("processing", {
+    display_mode: $("display-mode").value,
+    white_balance_source: "recorded",
   });
 $("white-balance").onclick = () => processing("white-balance", {});
 $("reset-wb").onclick = () =>

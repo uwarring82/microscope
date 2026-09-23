@@ -18,7 +18,7 @@ Open **http://127.0.0.1:8765**, then click **Start live view**. Stop the server 
 - Python and C APIs for capture and settings. [SDK usage and protocol notes](docs/native-sdk.md).
 - Open local PNG, JPEG, WebP, or BMP images; zoom, pan, fit, RGB readout, crosshair, and histogram.
 - Capture the exact displayed raw frame into a durable, replayable session, with settings, SHA-256, timestamps and provenance.
-- Persistent calibration profiles per objective/configuration/resolution, with a multi-interval fit and its standard error.
+- A calibration workflow with persistent profiles per objective/configuration/resolution, a multi-interval fit and its standard error. Physical stage-micrometer validation is still pending.
 - Editable distance lines, rectangles/areas, circles/diameters and points; labels, undo/redo and saved annotations.
 - Raw FITS plus image-only, annotated and inspection-sheet PNG exports with saved settings, raw histogram, measurements and notes.
 - Raw clipping and a relative central-green focus indicator, computed before white balance.
@@ -45,6 +45,8 @@ python3 server.py --replay artifacts/datasets/phone-screen-20260923
 ```
 
 Click **Play recording**. The UI labels the source **Offline replay** and loops only the frames in the selected recording. Choose a recording to change resolution/exposure; exposure and gain sliders are disabled because those settings were fixed when the data was captured. Color/raw display, white balance, zoom, histogram, freeze, measurement, and PNG export use the normal processing path. Playback preserves the original sensor bytes and capture timestamps; it does not reproduce original frame timing. The replay server neither discovers nor opens a USB camera, even if one is attached. It still uses the built native library for color processing.
+
+Each replay frame uses its own recorded white balance, with manifest gains as a legacy fallback. **Set white balance** and **Reset** select a manual override; **Use recorded balance** restores per-frame gains. Use preview resolution for focusing; full-resolution preview is around 2 fps on the tested Mac. Sessions may mix resolutions or camera/replay captures; the UI shows a notice and keeps every frame's provenance.
 
 To return to hardware, stop the replay server with Ctrl-C and run `python3 server.py` without `--replay`. There is no automatic fallback between hardware and recordings.
 

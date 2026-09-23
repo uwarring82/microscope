@@ -21,6 +21,7 @@ class RawDataset:
         self.description = str(manifest.get('description', 'Recorded microscope frames'))
         self.groups = []
         self.records = {}
+        self.frame_gains = {}
         groups_by_settings = {}
         rows = manifest.get('frames')
         if not isinstance(rows, list) or not rows:
@@ -47,6 +48,7 @@ class RawDataset:
                 raise ValueError(f'Raw checksum mismatch: {filename}')
             frame = Frame(raw, str(row['captured_at']), width, height)
             self.records[filename] = row
+            self.frame_gains[filename] = color_gains(row.get('white_balance_gains', self.gains))
             key = (resolution, exposure, gain)
             if key not in groups_by_settings:
                 group = {'id': str(len(self.groups)), 'resolution': resolution,
@@ -92,6 +94,36 @@ class ReplayAcquisition(Acquisition):
         self.resolution = self.selected['resolution']
         self.settings = dict(self.selected['settings'])
         self.white_balance_gains = self.dataset.gains
+        self.use_recorded_white_balance = True
+        self.white_balance_gains = self._recorded_gains()
+
+    def _recorded_gains(self):
+        filename = self.camera.last_file if self.camera and self.camera.last_file else self.selected['frames'][0][0]
+        return self.dataset.frame_gains[filename]
+
+    def _read(self):
+        frame = super()._read()
+        if self.use_recorded_white_balance:
+            self.white_balance_gains = self._recorded_gains()
+        return frame
+
+    def set_processing(self, data):
+        with self.lock:
+            data = dict(data)
+            source = data.pop('white_balance_source', 'manual')
+            if source not in ('recorded', 'manual'):
+                raise ValueError('White balance source must be recorded or manual')
+            if source == 'recorded':
+                data['white_balance_gains'] = self._recorded_gains()
+            super().set_processing(data)
+            self.use_recorded_white_balance = source == 'recorded'
+            return self.state()
+
+    def balance_neutral(self):
+        with self.lock:
+            super().balance_neutral()
+            self.use_recorded_white_balance = False
+            return self.state()
 
     def state(self):
         with self.lock:
@@ -99,6 +131,7 @@ class ReplayAcquisition(Acquisition):
             result.update(dataset=self.dataset.path.parent.name, description=self.dataset.description,
                           recordings=self.dataset.choices(), recording_id=self.selected['id'],
                           recorded_frame_count=len(self.selected['frames']),
+                          white_balance_source='recorded' if self.use_recorded_white_balance else 'manual',
                           recorded_file=self.camera.last_file if self.camera else None)
             return result
 
@@ -123,6 +156,8 @@ class ReplayAcquisition(Acquisition):
             self.resolution, self.settings = group['resolution'], dict(group['settings'])
             if self.camera is not None:
                 self.camera = _ReplayStream(group)
+            if self.use_recorded_white_balance:
+                self.white_balance_gains = self._recorded_gains()
             self.frames = 0
             return self.state()
 
@@ -135,6 +170,7 @@ class ReplayAcquisition(Acquisition):
     def _frame_metadata(self, frame):
         result = super()._frame_metadata(frame)
         result.update(recorded_file=self.camera.last_file, recording_id=self.selected['id'])
+        result['white_balance_source'] = 'recorded' if self.use_recorded_white_balance else 'manual'
         row = self.dataset.records[self.camera.last_file]
         result['provenance'] = {'dataset': self.dataset.path.parent.name,
                                 'file': self.camera.last_file, 'sha256': row['sha256'],

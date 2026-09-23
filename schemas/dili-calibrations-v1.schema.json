@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/uwarring82/microscope/v0.2.1/schemas/dili-calibrations-v1.schema.json",
+  "title": "Di-Li spatial calibration collection v1",
+  "type": "object",
+  "required": ["format", "profiles"],
+  "properties": {
+    "format": {"const": "dili-calibrations-v1"},
+    "profiles": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "name", "objective", "optical_configuration", "resolution", "created_at", "references", "um_per_pixel", "fit_standard_error", "residuals_um", "fit_method", "uncertainty_note"],
+        "properties": {
+          "id": {"type": "string", "pattern": "^[a-f0-9]{32}$"},
+          "name": {"type": "string", "minLength": 1},
+          "objective": {"type": "string", "minLength": 1},
+          "optical_configuration": {"type": "string", "minLength": 1},
+          "resolution": {"enum": ["1280x960", "2592x1944"]},
+          "created_at": {"type": "string", "format": "date-time"},
+          "um_per_pixel": {"type": "number", "exclusiveMinimum": 0},
+          "fit_standard_error": {"type": "number", "minimum": 0},
+          "residuals_um": {"type": "array", "items": {"type": "number"}},
+          "fit_method": {"const": "least squares through origin"},
+          "uncertainty_note": {"type": "string"},
+          "references": {
+            "type": "array", "minItems": 3, "maxItems": 100,
+            "items": {
+              "type": "object",
+              "required": ["session_id", "capture_id", "sha256", "a", "b", "known_um", "pixel_length"],
+              "properties": {
+                "session_id": {"type": "string"},
+                "capture_id": {"type": "string"},
+                "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+                "a": {"$ref": "#/$defs/point"}, "b": {"$ref": "#/$defs/point"},
+                "known_um": {"type": "number", "exclusiveMinimum": 0},
+                "pixel_length": {"type": "number", "minimum": 1}
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "point": {
+      "type": "object", "required": ["x", "y"],
+      "properties": {"x": {"type": "number", "minimum": 0}, "y": {"type": "number", "minimum": 0}}
+    }
+  }
+}
