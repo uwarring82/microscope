@@ -104,3 +104,9 @@ Record consequential implementation decisions, evidence, limitations and follow-
 
 - Operator confirmed zoom 6. Saved two independent raw references at each acquisition resolution, with FITS/PNG, settings, identities/checksums and local lab notes. Preview used 120 exposure lines/gain 13; full resolution was reduced to 60 lines/gain 13 to avoid clipping. Primary raw maxima were 163 DN and 135 DN, respectively; all four retained frames had zero pixels at 255.
 - Visually confirmed the target bars and preserved all raw samples. Spatial scale fitting remains deferred; no prior zoom profile was applied. Acquisition was stopped and the operator was told the next setting could be selected.
+
+
+## 2026-09-23 — Zoom-3 reference collection
+
+- Operator confirmed zoom 3. Saved two independent RAW8 references at each resolution, with original PNG, raw FITS, settings, identities/checksums and local lab notes. Preview used 40 exposure lines/gain 13; full resolution used 20 lines/gain 13. Primary raw maxima were 207 DN and 168 DN, respectively; all four retained frames had zero pixels at 255.
+- Target bars were visually checked, acquisition was stopped, and the operator was told the next setting could be selected. No spatial calibration was fitted or applied. Recorded zoom markings now include 0.58, 2, 3, 4, 6 and 7; later-setting analysis remains deferred.
