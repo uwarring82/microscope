@@ -77,6 +77,19 @@ Record consequential implementation decisions, evidence, limitations and follow-
 - The initial preview at 500 exposure lines/gain 40 was nearly dark (mean 12.057 DN, maximum 32). The later full-resolution frame at 1703 lines/gain 59 showed the mirror outline/rim and a dim surface with bright specks (mean 29.078 DN; six of 5,038,848 pixels at 255). Settings and specimen setup changed between captures; these are not a controlled exposure comparison or saturation calibration.
 - Saved the full-resolution raw FITS and setup notes locally. Illumination/focus optimization and any distinction between dust, reflections and coating defects remain pending. No physical scale or quantitative color interpretation was applied. Preview resolution was restored after the framing check, retaining the operator's exposure/gain settings; live viewing is running for further adjustment.
 
+## 2026-09-23 — Saved hardware frame review (offline)
+
+- Reviewed an existing three-capture hardware session, with one preview-resolution and two full-resolution frames. No camera connection or new acquisition was performed. All raw byte counts and SHA-256 values matched the manifest, acquisition sidecars matched the manifest entries, and recomputed raw histograms matched the saved statistics.
+- Reconstructed all three saved PNGs byte-for-byte from their raw frames and recorded processing settings. Both existing FITS primary pixel arrays matched their respective raw files; this was a payload comparison, not a new independent FITS standards validation.
+- All three raw frames contained an entirely zero-valued rightmost column, accounting for every zero pixel in each image. The origin (sensor output versus acquisition/framing behavior) remains unresolved; retain the original pixels and investigate with existing recordings before assigning a cause.
+- Visual inspection remains qualitative: no spatial calibration, objective or optical configuration was recorded, and display gains were unity. The close-up was soft; bright edge structure and surface features alone do not distinguish contamination, reflections and coating damage. Controlled focus/illumination comparisons and optical performance validation remain pending.
+
+## 2026-09-23 — Illustrated local lab notes
+
+- Created a local illustrated PDF and editable Markdown note from the reviewed saved hardware captures, including acquisition settings, raw identity/checksums, qualitative observations, alternative explanations and pending checks. Specimen notes, images and downloaded reference material remain in ignored local artifacts; no new acquisition or camera connection occurred.
+- Included attributed light-microscopy comparators for manufactured AR-coated glass, ageing, laser damage and latent scratching. These differ in substrate, coating and microscopy conditions and do not establish the inspected optic's coating identity or performance. The low-resolution ageing reference retains its original scale bars without transcribing uncertain lettering.
+- Rechecked raw hashes/lengths, metadata, histograms, exact PNG reconstruction and existing FITS primary pixel payloads. Rendered and visually checked all five PDF pages, verified image inclusion and source links, and retained a machine-readable provenance snapshot. No code behavior changed; no new physical or synthetic experiment was performed.
+
 
 ## 2026-09-23 — Physical USAF calibration at zoom 0.58
 
