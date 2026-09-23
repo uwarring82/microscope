@@ -110,3 +110,17 @@ Record consequential implementation decisions, evidence, limitations and follow-
 
 - Operator confirmed zoom 3. Saved two independent RAW8 references at each resolution, with original PNG, raw FITS, settings, identities/checksums and local lab notes. Preview used 40 exposure lines/gain 13; full resolution used 20 lines/gain 13. Primary raw maxima were 207 DN and 168 DN, respectively; all four retained frames had zero pixels at 255.
 - Target bars were visually checked, acquisition was stopped, and the operator was told the next setting could be selected. No spatial calibration was fitted or applied. Recorded zoom markings now include 0.58, 2, 3, 4, 6 and 7; later-setting analysis remains deferred.
+
+
+## 2026-09-23 — Final USAF setting and deferred series analysis
+
+- Operator confirmed zoom 5 as the final target setting for this collection. Saved two references per resolution at 80 exposure lines/gain 13. Primary raw maxima were 159 DN in preview and 246 DN at full resolution; all four frames had zero pixels at 255. The target series now contains 32 references across zoom markings 0.58, 2, 3, 4, 5, 6 and 7, including the retained dim/brighter zoom-7 variants and the zoom-1-to-2 label correction.
+- Began offline, independently measured scale fits for zooms 2–7 using the saved raw-green data, explicit strips, two orientations, held-out patterns and repeat captures. These remain draft analysis records: the operator then requested more specimen acquisition before further analysis. Final overlay review, acceptance, report and profile installation are deferred. No new zoom-2–7 profile was installed or applied to specimen data.
+- Reverified all 32 target references: raw lengths/hashes/histograms, original PNG reconstruction and raw FITS pixel/metadata identity. Rebuilt and checked the local portable packet and checksum inventory. This is file/payload verification, not independent FITS standards validation. Repository tests passed (native, 29 Python, seven JavaScript); no SDK/UI runtime behavior changed.
+
+## 2026-09-23 — Operator-labelled mirror series, collection only
+
+- Recorded a new operator-labelled mirror at zoom markings 7, 4 and 0.58, using preview and full resolution. The exact specimen label and any personal/project identifiers are retained only in local session notes. No coating identity, material composition or defect diagnosis was inferred.
+- At zoom 7, preview and initial full resolution used 2703 exposure lines/gain 60. The full frame contained 52 pixels at 255; a retained 1350-line bracket contained five. At zoom 4, preview and full used 1350 lines/gain 60 (two and 116 pixels at 255); a 675-line full-resolution bracket retained two. These frames are not described as entirely unclipped.
+- At zoom 0.58, preview at 337 lines/gain 60 had no pixels at 255; the initial full-resolution frame at the same setting had 18. Added a 168-line full-resolution bracket with no pixels at 255. Original frames, exact settings and all brackets were preserved. The whole-mirror view was visually checked for collection quality, not interpreted diagnostically.
+- Saved nine specimen frames with RAW8, original PNG, raw FITS, acquisition metadata, identifiers/checksums and local lab notes. Spatial profile assignment and specimen analysis remain deferred at the operator's request. Data, specimen labels, private paths and exports remain outside public Git.
