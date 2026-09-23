@@ -1,7 +1,9 @@
 """Offline zoom interpolation; no camera access or automatic profile creation.
 
 Scale is in micrometres per image pixel. Zoom is the physical ring marking.
-This numerical model does not establish mechanical repeatability or accuracy.
+Intermediate settings are rough planning estimates until ring setting/return
+and specimen-plane transfer are validated. This numerical model does not
+establish mechanical repeatability or total accuracy, even at a measured node.
 """
 import bisect
 import math

@@ -2,7 +2,10 @@
 
 The [completed series](#completed-zoom-series-offline-analysis-2026-09-23) covers
 seven zoom markings at both resolutions. Fourteen provisional measured profiles
-are available; intermediate settings are estimates with the limitations below.
+are available for use only at the corresponding ring markings; they remain
+provisional pending ring-return and reference-plane validation. Intermediate
+settings are rough estimates with no established total accuracy. See the
+[physical validation plan](calibration-validation-plan.md).
 
 ## Initial reference at zoom 0.58
 
@@ -155,6 +158,40 @@ measure field distortion, mechanical return to a zoom mark, target accuracy or
 focus/target-height effects. An image footprint computed as array size × local
 scale extrapolates that scale outside the sampled region.
 
+### Cross-mode consistency and reference coverage
+
+For ring markings 0.58, 2, 3, 4, 5, 6 and 7, preview/full scale ratios are
+**2.0063, 2.0014, 2.0004, 2.0018, 2.0039, 2.0005 and 1.9968**. Their relative
+departures from 2 are at most 0.313% overall and 0.196% inside 2–7. This is a
+useful relative consistency check: the same ring setting enters both captures.
+It does not establish 0.1–0.2% absolute accuracy, because shared target, optical
+and analysis biases can cancel. It also does not establish the sensor's sampling
+mechanism or guarantee that an ideal scale ratio is exactly 2.
+
+The two modes follow a similar departure from inverse zoom over 2–7 (Pearson
+correlation 0.855 for six nodes). After separately normalizing zoom × scale by
+its median over 2–7, their curves differ by at most 0.205 percentage points.
+This is consistent with a shared zoom-dependent component, but a single visit
+per mark cannot separate ring placement from optical nonlinearity or shared
+biases. It is not a measurement of mechanical error.
+
+G2 supplies 281–500 µm intervals at 0.58/2; G4 supplies 70–125 µm at 3–7.
+Group-dependent target fabrication or edge-measurement bias could therefore
+contribute across the 2–3 boundary; target tolerances have not been checked.
+At zoom 7 full resolution each fitted interval is 112–201 pixels long. The
+strips are distributed across x=656–1949 and y=288–1845 in the 2592×1944 array
+(upper ROI bounds exclusive), rather than confined to one tiny central patch.
+This samples several positions but is **not a full-field distortion map**:
+different target elements and positions are confounded and the horizontal
+edges/corners lack translated-reference validation.
+
+Specimen height and refocusing can change scale; this optical setup's dependence
+has not been characterized. The mirror's surface plane differs from the target's
+according to the operator, so reference-plane transfer remains unvalidated for
+**every mirror measurement**, even with an exact marked-setting profile. The
+new [validation plan](calibration-validation-plan.md) addresses that transfer,
+ring return/direction, low-zoom nodes and a translated certified reference.
+
 ### Interpolating between measured zoom marks
 
 The offline helper [tools/zoom_interpolation.py](../tools/zoom_interpolation.py)
@@ -167,7 +204,9 @@ s(z) = 1 / ((1-t)/s_i + t/s_(i+1))
 
 It refuses extrapolation, unordered/duplicate nodes and nonpositive scales.
 It does not create dashboard profiles or relax exact-configuration matching.
-For quantitative work prefer measured profiles over intermediate estimates.
+Use the 14 profiles only at their recorded markings and exact resolution.
+Interpolation is a rough planning estimate until intermediate ring setting and
+return precision are measured; do not assign it a total accuracy.
 
 Withholding each interior node 3, 4, 5 and 6 from the 2–7 series in turn gives
 RMS/max prediction errors of **0.332%/0.431% preview** and **0.321%/0.496% full**.
@@ -177,13 +216,13 @@ has about 12% maximum error on the same check. Inverse-zoom and log-log models
 have similar small errors to the reciprocal-scale model; this agreement is not
 an accuracy bound.
 
-For a provisional engineering allowance, define a node envelope as the maximum
+For an image-analysis/model diagnostic envelope only, define a node envelope as the maximum
 of absolute held-out error, repeat change, x/y difference, threshold/green-phase
 sensitivity, and twice relative fit SE. Take the larger envelope of the two
 bracketing nodes and add the maximum withheld-node error for that resolution.
 Addition avoids treating correlated diagnostics as independent random errors.
 
-| Interpolated ring interval | Preview working allowance | Full working allowance |
+| Interpolated ring interval | Preview diagnostic envelope | Full diagnostic envelope |
 | --- | ---: | ---: |
 | 2–3 | ±1.53% | ±1.34% |
 | 3–4 | ±1.53% | ±1.34% |
@@ -191,13 +230,16 @@ Addition avoids treating correlated diagnostics as independent random errors.
 | 5–6 | ±0.85% | ±1.09% |
 | 6–7 | ±1.05% | ±1.09% |
 
-These are **empirical allowances, not standard uncertainties, 95% intervals,
-guaranteed bounds or a complete uncertainty budget**. A rounded ±2% allowance
-inside 2–7 excludes target tolerance, field/focus effects and mechanical zoom
-reading/return. At 3.5, estimates are 2.4974 ± 0.0383 µm/px preview and
-1.2479 ± 0.0168 µm/px full under this convention. A hypothetical ±0.05 ring-unit
-reading error would add roughly ±1.4% at 3.5 (relative scale error ≈ |δz|/z);
-no such ring-reading precision has been measured.
+These are **partial diagnostic envelopes, not a future-setting accuracy,
+standard uncertainty, 95% interval or guaranteed bound**. The earlier rounded
+±2% recommendation is withdrawn as an operational accuracy statement: it does
+not include ring reading/return, target tolerance, specimen height/focus or field
+position. No total ±2% bound is established even at the marked settings.
+At 3.5 the model gives 2.4974 µm/px preview and 1.2479 µm/px full; the tabulated
+diagnostic components alone correspond to 0.0383 and 0.0168 µm/px. A hypothetical
+±0.05 ring-unit error contributes roughly ±1.4% at 3.5 and ±2.5% at 2
+(relative scale error ≈ |δz|/z), before the other terms. Such reading precision
+has not been measured, and marked-setting return uncertainty is also unknown.
 
 **The 0.58–2 gap has no interior validation.** At ring 1 and 1.5, estimated full
 scales are 4.3147 and 2.8995 µm/px. Alternative inverse-zoom/log-log estimates
