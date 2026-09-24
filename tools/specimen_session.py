@@ -99,6 +99,8 @@ def capture(args):
     if not state['capture_available']:
         raise SystemExit(state.get('message') or 'Capture unavailable')
     original = {'settings': dict(acquisition['settings']), 'resolution': acquisition['resolution']}
+    # A fixed --gain overrides the live setting, so a series stays matched if the operator changes it.
+    capture_settings = {**original['settings'], **({'gain': args.gain} if args.gain else {})}
     profiles = server.request('/api/profiles')
     existing = len(list((folder / 'fields').glob('*'))) if (folder / 'fields').exists() else 0
     field_id = f'{existing + 1:02d}-z{args.zoom}-{slug(args.field)}'
@@ -114,7 +116,7 @@ def capture(args):
             server.request('/api/camera/resolution', {'resolution': resolution})
             server.request('/api/camera/start', {})
             if not replay:
-                server.request('/api/camera/settings', original['settings'])
+                server.request('/api/camera/settings', capture_settings)
             match = [p for p in profiles if (p['objective'], p['optical_configuration'], p['resolution'])
                      == (OBJECTIVE, configuration(args.zoom), resolution)]
             profile = match[0] if len(match) == 1 else None
@@ -123,7 +125,7 @@ def capture(args):
             for n in range(1, count + 1):
                 if ladder[0] is not None and (n - 1) % args.frames == 0 and n <= len(ladder) * args.frames:
                     server.request('/api/camera/settings', {'exposure_lines': ladder[(n - 1) // args.frames],
-                                                            'gain': original['settings']['gain']})
+                                                            'gain': capture_settings['gain']})
                 _, headers = server.request('/api/camera/frame.png', raw=True)
                 record = server.request('/api/capture', {
                     'frame_id': headers['X-Frame-ID'], 'session_id': session,
@@ -337,6 +339,7 @@ def main(argv=None):
     c.add_argument('--resolutions', default='preview,full', choices=['preview', 'full', 'preview,full', 'full,preview'])
     c.add_argument('--frames', type=int, default=1, help='Frames per resolution at the set exposure')
     c.add_argument('--bracket', action='store_true', help='Full resolution: halve exposure until no pixel is >= 240')
+    c.add_argument('--gain', type=int, help='Fixed gain register for all frames (default: live setting)')
     c.add_argument('--exposures', type=lambda text: [int(v) for v in text.split(',')],
                    help='Full resolution: comma-separated exposure lines, e.g. 129,258,515 (gain unchanged)')
     c.add_argument('--max-brackets', type=int, default=5)

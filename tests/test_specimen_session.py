@@ -85,6 +85,12 @@ class SpecimenSessionTests(unittest.TestCase):
                          [('preview-1', 800, 60), ('full-1', 100, 60), ('full-2', 200, 60), ('full-3', 400, 60)])
         self.assertEqual(fake.settings, {'exposure_lines': 800, 'gain': 60})
 
+    def test_fixed_gain_overrides_live_setting_and_live_settings_are_restored(self):
+        fake, field = self.run_capture('--gain', '50', '--exposures', '100,200')
+        self.assertEqual({r['gain'] for r in field['records']}, {50})
+        self.assertEqual(field['records'][0]['exposure_lines'], 800)
+        self.assertEqual(fake.settings, {'exposure_lines': 800, 'gain': 60})
+
 
 if __name__ == '__main__':
     unittest.main()

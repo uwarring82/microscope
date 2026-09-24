@@ -28,18 +28,19 @@ Tell the assistant, or pass as options:
 | Approach to the mark | in `--note` | `from lower zoom` |
 
 1. Set the zoom ring on a marking; record the approach direction. Intermediate settings have no validated scale.
-2. Focus, then set exposure in the live view: a usable signal, ideally no raw values at 255 in the region of interest.
+2. Focus, then set exposure in the live view: a usable signal, ideally no raw values ≥240 in the region of interest (this sensor can saturate below 255).
 3. Stop live view, then capture:
 
    ```sh
    python3 -m tools.specimen_session capture SERIES --sample "LABEL" --zoom 4 --field streak \
-       --note "..." --illumination "..." --bracket
+       --note "..." --illumination "..." --gain 50 --exposures 129,258,515,1031
    ```
 
-   This saves one preview and one full-resolution frame at the current settings. With `--bracket`, each clipped
-   full-resolution frame is followed by one at half the exposure until none reaches 255; every frame is kept. The
+   `--gain` fixes the gain even if the live setting changes; `--exposures` takes a full-resolution series at fixed gain
+   (the preview uses the live exposure). Without them, one preview and one full frame use the live settings. With `--bracket`, each clipped
+   full-resolution frame is followed by one at half the exposure until none reaches 240; every frame is kept. The
    matching marked-setting profile is attached automatically; without one the capture is marked UNCALIBRATED.
-4. Check the printed raw max and pixel counts at 255. Repeat for the next field. Fields are numbered in order
+4. Check the printed raw max and % ≥240. Repeat for the next field. Fields are numbered in order
    and never overwritten.
 
 ## After the session
