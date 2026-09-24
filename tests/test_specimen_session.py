@@ -79,6 +79,12 @@ class SpecimenSessionTests(unittest.TestCase):
         self.assertEqual([(r['name'], r['exposure_lines']) for r in field['records']],
                          [('full-1', 800), ('full-2', 800)])
 
+    def test_exposure_ladder_applies_to_full_resolution_only_with_fixed_gain(self):
+        fake, field = self.run_capture('--exposures', '100,200,400')
+        self.assertEqual([(r['name'], r['exposure_lines'], r['gain']) for r in field['records']],
+                         [('preview-1', 800, 60), ('full-1', 100, 60), ('full-2', 200, 60), ('full-3', 400, 60)])
+        self.assertEqual(fake.settings, {'exposure_lines': 800, 'gain': 60})
+
 
 if __name__ == '__main__':
     unittest.main()

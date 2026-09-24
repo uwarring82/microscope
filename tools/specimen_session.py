@@ -26,6 +26,7 @@ import urllib.request
 ROOT = Path(__file__).resolve().parent.parent
 CAPTURES = ROOT / 'artifacts' / 'captures'
 OBJECTIVE = 'Default objective'
+NEAR_SATURATION = 240
 RESOLUTIONS = {'preview': '1280x960', 'full': '2592x1944'}
 PROVISIONAL = ('PROVISIONAL MARKED-SETTING SCALE: measured USAF profile for this zoom marking and '
                'resolution. Ring return, target-to-specimen height transfer and field dependence are '
@@ -117,7 +118,12 @@ def capture(args):
             match = [p for p in profiles if (p['objective'], p['optical_configuration'], p['resolution'])
                      == (OBJECTIVE, configuration(args.zoom), resolution)]
             profile = match[0] if len(match) == 1 else None
-            for n in range(1, args.frames + 1 + (args.max_brackets if args.bracket and mode == 'full' else 0)):
+            ladder = args.exposures if args.exposures and mode == 'full' else [None]
+            count = len(ladder) * args.frames + (args.max_brackets if args.bracket and mode == 'full' else 0)
+            for n in range(1, count + 1):
+                if ladder[0] is not None and (n - 1) % args.frames == 0 and n <= len(ladder) * args.frames:
+                    server.request('/api/camera/settings', {'exposure_lines': ladder[(n - 1) // args.frames],
+                                                            'gain': original['settings']['gain']})
                 _, headers = server.request('/api/camera/frame.png', raw=True)
                 record = server.request('/api/capture', {
                     'frame_id': headers['X-Frame-ID'], 'session_id': session,
@@ -133,20 +139,23 @@ def capture(args):
                     raise SystemExit(f'Saved raw frame failed verification: {meta["capture_id"]}')
                 fits = server.request('/api/export/fits', {'session_id': session, 'capture_id': meta['capture_id']})
                 clipped = meta['raw_statistics']['saturated_pixels']
+                # This sensor can plateau at ~246-254 without reaching 255, so also count >= 240.
+                near = sum(meta['raw_statistics']['histogram'][NEAR_SATURATION:])
                 maximum = max(i for i, c in enumerate(meta['raw_statistics']['histogram']) if c)
                 records.append({'name': f'{mode}-{n}', 'session_id': session, 'capture_id': meta['capture_id'],
                                 'directory': relative(directory),
                                 'resolution': resolution, 'captured_at': meta['captured_at'],
                                 'exposure_lines': meta['exposure_lines'], 'gain': meta['gain'],
-                                'pixels_at_255': clipped, 'raw_max': maximum, 'sha256': meta['sha256'],
+                                'pixels_at_255': clipped, 'pixels_ge_240': near,
+                                'percent_ge_240': 100 * near / (meta['width'] * meta['height']), 'raw_max': maximum, 'sha256': meta['sha256'],
                                 'profile_id': profile['id'] if profile else None,
                                 'um_per_pixel': profile['um_per_pixel'] if profile else None,
                                 'fits': relative(Path(fits['path']))})
                 print(f'{mode}-{n}: {meta["capture_id"]} {meta["exposure_lines"]} lines gain {meta["gain"]} '
-                      f'max {maximum} at255 {clipped} scale {profile["um_per_pixel"] if profile else "UNCALIBRATED"}')
-                if n >= args.frames:
-                    # Brackets halve exposure until nothing reaches 255; originals are kept.
-                    if replay or not args.bracket or mode != 'full' or clipped == 0 or meta['exposure_lines'] <= 1:
+                      f'max {maximum} at255 {clipped} >=240 {100 * near / (meta["width"] * meta["height"]):.2f}% scale {profile["um_per_pixel"] if profile else "UNCALIBRATED"}')
+                if n >= len(ladder) * args.frames:
+                    # Brackets halve exposure until nothing reaches 240; originals are kept.
+                    if replay or not args.bracket or mode != 'full' or near == 0 or meta['exposure_lines'] <= 1:
                         break
                     server.request('/api/camera/settings', {'exposure_lines': max(1, meta['exposure_lines'] // 2),
                                                             'gain': meta['gain']})
@@ -172,7 +181,7 @@ def capture(args):
 
 def lab_notes(field, series, entry):
     rows = ''.join(f"| {r['name']} | {r['resolution']} | {r['captured_at'][11:19]} UTC | {r['exposure_lines']} | "
-                   f"{r['gain']} | {r['raw_max']} | {r['pixels_at_255']} | "
+                   f"{r['gain']} | {r['raw_max']} | {r['pixels_at_255']} | {r.get('percent_ge_240', 0):.2f} | "
                    f"{scale_text(r['um_per_pixel'])} |\n" for r in entry['records'])
     ids = ''.join(f"- {r['name']}: session `{r['session_id']}`, capture `{r['capture_id']}`, "
                   f"raw SHA-256 `{r['sha256']}`\n" for r in entry['records'])
@@ -182,10 +191,10 @@ def lab_notes(field, series, entry):
         f"Position: {entry['position_note'] or 'not recorded'}. "
         f"Illumination: {entry['illumination'] or 'not recorded'}. Source: {entry['source_type']}."
         f"{'' if entry['complete'] else ' **INCOMPLETE: capture stopped early.**'}\n\n"
-        '| Capture | Resolution | Host read | Exposure lines | Gain | Raw max | Pixels at 255 | µm/px (provisional) |\n'
-        '| --- | --- | --- | ---: | ---: | ---: | ---: | --- |\n' + rows +
-        f"\n{PROVISIONAL}\n\nExposure is in sensor lines; 255 counts are an endpoint check, not a saturation "
-        'calibration. Shorter brackets supplement the original frames; no raw frame is replaced.\n\n' + ids)
+        '| Capture | Resolution | Host read | Exposure lines | Gain | Raw max | Pixels at 255 | % ≥240 | µm/px (provisional) |\n'
+        '| --- | --- | --- | ---: | ---: | ---: | ---: | ---: | --- |\n' + rows +
+        f"\n{PROVISIONAL}\n\nExposure is in sensor lines. The sensor can saturate at about 246-254 DN without "
+        'reaching 255, so % ≥240 is the practical clipping indicator; neither is a saturation calibration. Shorter brackets supplement the original frames; no raw frame is replaced.\n\n' + ids)
 
 
 def iter_records(folder):
@@ -269,7 +278,7 @@ def overview(args):
         ax.imshow(image, cmap='gray', vmin=low, vmax=high, extent=(0, meta['width'], meta['height'], 0))
         mode = 'F' if r['resolution'] == RESOLUTIONS['full'] else 'P'
         ax.set_title(f"{label} | z{entry['zoom_ring_marking']} {mode} | {r['exposure_lines']} lines | "
-                     f"N255={r['pixels_at_255']}", fontsize=8)
+                     f"≥240: {r.get('percent_ge_240', 0):.2f}%", fontsize=8)
         ax.set_xticks([]); ax.set_yticks([])
         if r['um_per_pixel']:
             length = scale_bar(meta['width'] * r['um_per_pixel'] / 4)
@@ -286,12 +295,12 @@ def overview(args):
     figure.tight_layout(rect=(0, 0, 1, 0.96))
     figure.savefig(out / 'contact-sheet.png', dpi=150)
     plt.close(figure)
-    ledger = ('| ID | Field | Zoom | Mode | Host read (UTC) | Lines | Gain | Raw max | N255 | µm/px* | SHA-256 |\n'
-              '| --- | --- | --- | --- | --- | ---: | ---: | ---: | ---: | --- | --- |\n')
+    ledger = ('| ID | Field | Zoom | Mode | Host read (UTC) | Lines | Gain | Raw max | N255 | % ≥240 | µm/px* | SHA-256 |\n'
+              '| --- | --- | --- | --- | --- | ---: | ---: | ---: | ---: | ---: | --- | --- |\n')
     for d, (entry, r) in zip(display, items):
         ledger += (f"| {d['label']} | {entry['field_id']} | {entry['zoom_ring_marking']} | {r['resolution']} | "
                    f"{r['captured_at'][11:19]} | {r['exposure_lines']} | {r['gain']} | {r['raw_max']} | "
-                   f"{r['pixels_at_255']} | {scale_text(r['um_per_pixel'])} | `{r['sha256'][:12]}` |\n")
+                   f"{r['pixels_at_255']} | {r.get('percent_ge_240', 0):.2f} | {scale_text(r['um_per_pixel'])} | `{r['sha256'][:12]}` |\n")
     (out / 'ledger.md').write_text(f"# Capture ledger — {series['sample_id']}\n\n{ledger}\n"
                                    f"*Provisional. {PROVISIONAL}\n")
     write_json(out / 'display-provenance.json', display)
@@ -327,7 +336,9 @@ def main(argv=None):
     c.add_argument('--steward', default='U.Warring')
     c.add_argument('--resolutions', default='preview,full', choices=['preview', 'full', 'preview,full', 'full,preview'])
     c.add_argument('--frames', type=int, default=1, help='Frames per resolution at the set exposure')
-    c.add_argument('--bracket', action='store_true', help='Full resolution: halve exposure until no pixel is 255')
+    c.add_argument('--bracket', action='store_true', help='Full resolution: halve exposure until no pixel is >= 240')
+    c.add_argument('--exposures', type=lambda text: [int(v) for v in text.split(',')],
+                   help='Full resolution: comma-separated exposure lines, e.g. 129,258,515 (gain unchanged)')
     c.add_argument('--max-brackets', type=int, default=5)
     for name in ('verify', 'overview'):
         commands.add_parser(name).add_argument('series')

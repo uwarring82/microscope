@@ -12,7 +12,7 @@ and history. Update this page whenever a status below changes.
 | Exact-frame capture, sessions, FITS/PNG exports | Working; replay, checksum and FITS payload checks recorded in the logbook. |
 | Capture provenance | Captures made **from now on** record `modified_paths`, `snapshot_at` and `snapshot_scope`. Captures made before the restart after `a44e352` record only a `modified` boolean. |
 | Specimen sessions | `tools/specimen_session.py` captures fields with the matching profile attached, verifies files and draws contact sheets/ledgers; use with the [acquisition sheet](acquisition-sheet.md). Bracketing is tested against a simulated camera only. |
-| Open software issues | The rightmost raw column is always zero; its cause is not known. Sensor saturation level, black offset and exposure time in seconds are not characterized. |
+| Open software issues | The rightmost raw column is always zero; its cause is not known. The sensor can saturate at about 246–254 DN without reaching 255 (seen 2026-09-24), so the server's count at 255 underestimates clipping; the session tool also reports % ≥240. Saturation level, black offset (about 10 DN observed) and exposure time in seconds are not characterized. |
 
 ## Spatial calibration
 
