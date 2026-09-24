@@ -101,6 +101,8 @@ def capture(args):
     original = {'settings': dict(acquisition['settings']), 'resolution': acquisition['resolution']}
     # A fixed --gain overrides the live setting, so a series stays matched if the operator changes it.
     capture_settings = {**original['settings'], **({'gain': args.gain} if args.gain else {})}
+    if not replay and capture_settings['gain'] != original['settings']['gain']:
+        print(f"Live gain {original['settings']['gain']} differs; capturing at series gain {capture_settings['gain']}.")
     profiles = server.request('/api/profiles')
     existing = len(list((folder / 'fields').glob('*'))) if (folder / 'fields').exists() else 0
     field_id = f'{existing + 1:02d}-z{args.zoom}-{slug(args.field)}'
@@ -115,6 +117,7 @@ def capture(args):
             resolution = RESOLUTIONS[mode]
             server.request('/api/camera/resolution', {'resolution': resolution})
             server.request('/api/camera/start', {})
+            expected = dict(capture_settings)  # what every saved frame of this mode must record
             if not replay:
                 server.request('/api/camera/settings', capture_settings)
             match = [p for p in profiles if (p['objective'], p['optical_configuration'], p['resolution'])
@@ -124,8 +127,8 @@ def capture(args):
             count = len(ladder) * args.frames + (args.max_brackets if args.bracket and mode == 'full' else 0)
             for n in range(1, count + 1):
                 if ladder[0] is not None and (n - 1) % args.frames == 0 and n <= len(ladder) * args.frames:
-                    server.request('/api/camera/settings', {'exposure_lines': ladder[(n - 1) // args.frames],
-                                                            'gain': capture_settings['gain']})
+                    expected = {'exposure_lines': ladder[(n - 1) // args.frames], 'gain': capture_settings['gain']}
+                    server.request('/api/camera/settings', expected)
                 _, headers = server.request('/api/camera/frame.png', raw=True)
                 record = server.request('/api/capture', {
                     'frame_id': headers['X-Frame-ID'], 'session_id': session,
@@ -155,12 +158,18 @@ def capture(args):
                                 'fits': relative(Path(fits['path']))})
                 print(f'{mode}-{n}: {meta["capture_id"]} {meta["exposure_lines"]} lines gain {meta["gain"]} '
                       f'max {maximum} at255 {clipped} >=240 {100 * near / (meta["width"] * meta["height"]):.2f}% scale {profile["um_per_pixel"] if profile else "UNCALIBRATED"}')
+                # The server labels each frame with the settings in force when it was read. A mismatch means the
+                # settings were changed elsewhere (e.g. the dashboard) during capture: keep the frame, stop the field.
+                if not replay and (meta['gain'], meta['exposure_lines']) != (expected['gain'], expected['exposure_lines']):
+                    raise SystemExit(f"Settings changed during capture: {mode}-{n} recorded {meta['exposure_lines']} lines/"
+                                     f"gain {meta['gain']}, expected {expected['exposure_lines']}/{expected['gain']}. "
+                                     'Field kept and marked incomplete; do not touch the dashboard sliders while capturing.')
                 if n >= len(ladder) * args.frames:
                     # Brackets halve exposure until nothing reaches 240; originals are kept.
                     if replay or not args.bracket or mode != 'full' or near == 0 or meta['exposure_lines'] <= 1:
                         break
-                    server.request('/api/camera/settings', {'exposure_lines': max(1, meta['exposure_lines'] // 2),
-                                                            'gain': meta['gain']})
+                    expected = {'exposure_lines': max(1, meta['exposure_lines'] // 2), 'gain': capture_settings['gain']}
+                    server.request('/api/camera/settings', expected)
         complete = True
     finally:
         # Keep whatever was saved, even after a failure; an incomplete field is marked as such.
@@ -175,7 +184,11 @@ def capture(args):
             server.request('/api/camera/stop', {})
             server.request('/api/camera/resolution', {'resolution': original['resolution']})
             if not replay:
-                server.request('/api/camera/settings', original['settings'])
+                # Live exposure is restored; with --gain the series gain stays, so the dashboard shows the data's gain.
+                live = {'exposure_lines': original['settings']['exposure_lines'], 'gain': capture_settings['gain']}
+                server.request('/api/camera/settings', live)
+                if live['gain'] != original['settings']['gain']:
+                    print(f"Live view left at series gain {live['gain']} (was {original['settings']['gain']}).")
         except (SystemExit, OSError) as error:
             print(f'Could not restore camera state: {error}', file=sys.stderr)
     print(f'Saved {len(records)} captures to {relative(field)}')

@@ -50,6 +50,24 @@ class AcquisitionTests(unittest.TestCase):
             service.close()
 
     @patch('acquisition.Camera')
+    def test_partial_settings_keep_the_other_value(self, camera):
+        service = Acquisition()
+        try:
+            service.start()
+            service.configure({'exposure_lines': 1000, 'gain': 50})
+            service.configure({'exposure_lines': 769})
+            self.assertEqual(service.settings, {'exposure_lines': 769, 'gain': 50})
+            camera.return_value.set_gain.assert_called_with(50)
+            service.configure({'gain': 60})
+            self.assertEqual(service.settings, {'exposure_lines': 769, 'gain': 60})
+            for bad in ({}, {'offset': 1}, {'gain': 71}, {'exposure_lines': True}):
+                with self.subTest(settings=bad), self.assertRaises(ValueError):
+                    service.configure(bad)
+            self.assertEqual(service.settings, {'exposure_lines': 769, 'gain': 60})
+        finally:
+            service.close()
+
+    @patch('acquisition.Camera')
     def test_failed_settings_close_device_without_claiming_success(self, camera):
         service = Acquisition()
         try:

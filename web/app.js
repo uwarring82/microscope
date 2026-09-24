@@ -309,10 +309,12 @@ function settingsLabels() {
 for (const id of ["exposure", "gain"]) {
   $(id).oninput = settingsLabels;
   $(id).onchange = () => {
-    const data = {
-      exposure_lines: Number($("exposure").value),
-      gain: Number($("gain").value),
-    };
+    // Send only the control that changed; the other keeps its current server value, so a slider that has
+    // not yet refreshed (e.g. after a scripted capture changed the gain) cannot write back a stale setting.
+    const data =
+      id === "exposure"
+        ? { exposure_lines: Number($("exposure").value) }
+        : { gain: Number($("gain").value) };
     settingsPending++;
     settingsQueue = settingsQueue
       .then(() => cameraCommand("settings", data))

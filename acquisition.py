@@ -63,12 +63,15 @@ class Acquisition:
             return self.state()
 
     def configure(self, settings):
-        if set(settings) != {'exposure_lines', 'gain'}:
-            raise ValueError('Supply exposure_lines and gain')
+        # Either or both settings; an omitted one keeps its current value, so a client that changes only
+        # exposure can never write back a stale gain (or vice versa).
+        if not settings or not set(settings) <= {'exposure_lines', 'gain'}:
+            raise ValueError('Supply exposure_lines and/or gain')
         for key, maximum in [('exposure_lines', 3000), ('gain', 70)]:
-            if type(settings[key]) is not int or not 1 <= settings[key] <= maximum:
+            if key in settings and (type(settings[key]) is not int or not 1 <= settings[key] <= maximum):
                 raise ValueError(f'{key} must be an integer in 1..{maximum}')
         with self.lock:
+            settings = {**self.settings, **settings}
             if self.camera:
                 try:
                     self.camera.set_exposure_lines(settings['exposure_lines'])

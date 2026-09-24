@@ -11,8 +11,9 @@ from tools import specimen_session as tool
 class FakeServer:
     """Camera stand-in: pixels at 255 fall as exposure is halved."""
 
-    def __init__(self, url, directory):
+    def __init__(self, url, directory, interfere_after=None):
         self.directory = directory
+        self.interfere_after = interfere_after  # frame count after which an outside settings change happens
         self.settings = {'exposure_lines': 800, 'gain': 60}
         self.resolution = '1280x960'
         self.calls = []
@@ -31,6 +32,8 @@ class FakeServer:
         elif path == '/api/camera/resolution':
             self.resolution = data['resolution']
         elif path == '/api/camera/frame.png':
+            if self.interfere_after is not None and self.count == self.interfere_after - 1:
+                self.settings = dict(self.settings, gain=70)
             return b'', {'X-Frame-ID': 'f'}
         elif path == '/api/capture':
             self.count += 1
@@ -52,11 +55,12 @@ class FakeServer:
 
 
 class SpecimenSessionTests(unittest.TestCase):
-    def run_capture(self, *extra):
+    def run_capture(self, *extra, interfere_after=None):
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)
         root = Path(temporary.name)
-        fake = FakeServer(None, root)
+        self.captures = root / 'captures'
+        fake = FakeServer(None, root, interfere_after)
         with patch.object(tool, 'Server', lambda url: fake):
             tool.main(['--captures', str(root / 'captures'), 'capture', 'test-series', '--sample', 'Mirror',
                        '--zoom', '4', '--field', 'Streak field', *extra])
@@ -85,11 +89,21 @@ class SpecimenSessionTests(unittest.TestCase):
                          [('preview-1', 800, 60), ('full-1', 100, 60), ('full-2', 200, 60), ('full-3', 400, 60)])
         self.assertEqual(fake.settings, {'exposure_lines': 800, 'gain': 60})
 
-    def test_fixed_gain_overrides_live_setting_and_live_settings_are_restored(self):
+    def test_fixed_gain_is_used_for_every_frame_and_left_active_for_the_live_view(self):
         fake, field = self.run_capture('--gain', '50', '--exposures', '100,200')
         self.assertEqual({r['gain'] for r in field['records']}, {50})
         self.assertEqual(field['records'][0]['exposure_lines'], 800)
-        self.assertEqual(fake.settings, {'exposure_lines': 800, 'gain': 60})
+        # Live exposure is restored, but the dashboard keeps the series gain rather than the old live gain.
+        self.assertEqual(fake.settings, {'exposure_lines': 800, 'gain': 50})
+
+    def test_settings_changed_elsewhere_during_capture_stop_the_field(self):
+        # The fake server switches to gain 70 before the second frame, as a moved dashboard slider would.
+        with self.assertRaises(SystemExit) as stop:
+            self.run_capture('--gain', '50', '--exposures', '100,200', interfere_after=2)
+        self.assertIn('Settings changed during capture', str(stop.exception))
+        field = json.loads(next(self.captures.glob('test-series/fields/*/field.json')).read_text())
+        self.assertFalse(field['complete'])
+        self.assertEqual([(r['name'], r['gain']) for r in field['records']], [('preview-1', 50), ('full-1', 70)])
 
 
 if __name__ == '__main__':

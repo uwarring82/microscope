@@ -40,6 +40,9 @@ Tell the assistant, or pass as options:
    (the preview uses the live exposure). Without them, one preview and one full frame use the live settings. With `--bracket`, each clipped
    full-resolution frame is followed by one at half the exposure until none reaches 240; every frame is kept. The
    matching marked-setting profile is attached automatically; without one the capture is marked UNCALIBRATED.
+   **Do not move the dashboard sliders while a capture runs.** Every saved frame is checked against the settings the tool
+   requested; if they differ (for example a slider was moved), the tool keeps the frame, marks the field incomplete and
+   stops. With `--gain`, the live view is left at the series gain afterwards, so the dashboard shows the gain of the data.
 4. Check the printed raw max and % ≥240. Repeat for the next field. Fields are numbered in order
    and never overwritten.
 
