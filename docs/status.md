@@ -33,6 +33,7 @@ and history. Update this page whenever a status below changes.
 | Report | Local illustrated report, revision 2 (7 pages). Documents appearance only. |
 | Interpretation | Imaging appears scatter-dominated (dark-field-like); this is inferred, since the illumination was not recorded. No cause, coating damage, dimensions or grade is assigned. |
 | Software record of these captures | v0.2.1, commit `a99db05`, `modified: true`; which files were modified cannot be reconstructed. |
+| Backlit comparison (24 Sep) | Used and new M4 in one mirror mount against the empty mount: used ÷ new relative transmittance 0.571 green (±4.4%), 0.906 blue (±2.7%), 0.83 red (±16%), at three zooms; uniform over the analysed areas. Local draft report r1. Band-integrated and setup-specific; not a reflectance, spectrum or diagnosis. |
 | Next evidence | Focus series with 2–3 illumination directions at the zoom-4 streak field; a registered repeat inspection with fixed settings; performance measured separately at the operating wavelength. Acceptance criteria not yet agreed with the setup's users. |
 
 ## Data stewardship
