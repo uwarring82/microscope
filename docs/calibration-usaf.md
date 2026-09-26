@@ -361,6 +361,25 @@ the red lattice (factor √2). Local fits in 4 × 3 blocks, and a joint radial t
   - Pixel squareness is better than 0.02%. The USAF x/y differences of 0.3–0.4% are therefore analysis-side as well.
   - The first field measurement, valid at this ring setting only, shows scale variations ≤0.13% across the full field.
 
+**The two methods compared.** The operator does not recall the ring setting of the phone frames; a new sequence
+at recorded marks is planned.
+
+| Aspect | USAF 1951 target (Thorlabs R1DS1N) | iPhone 17 Pro display lattice |
+| --- | --- | --- |
+| Length reference | Bar spacings from the USAF group/element formula; target certificate and tolerance not recorded | Pixel pitch 55.22 µm from the 460 ppi specification (±0.1% from rounding); a manufacturer specification, not a certificate |
+| Features measured | 12 bar intervals per capture (group 2: 281–500 µm at zoom 0.58–2; group 4: 70–125 µm at zoom 3–7), near the image centre | About 2200 subpixel centroids per full frame (1100 per preview frame), over the whole field |
+| Repeatability | Repeat captures 0.1–0.2%; x/y fits differ by 0.3–0.4%; a finer interval left out of the fit differs by up to 0.85% (full) and 2.0% (preview) | Frame to frame 0.005%; red vs green lattice 0.02%; x/y axes 0.02% |
+| Field coverage | Centre only; distortion not measured | Full field: a local scale map and radial term (≤0.13%, +0.10% at the corner, at the one setting measured) |
+| Zoom range | All marks 0.58–7, with the target group chosen per zoom | Green pitch 7.6 px at 0.58 (marginal; 3.8 px in preview), 25 px at 2, 89 px at 7 (~640 subpixels in the field) |
+| Extra information | none | RGB subpixels give a colour and white-balance check. The equal axes also show the screen was flat and square to the optical axis within about 1°. |
+| Height of the measured plane | Chrome pattern on the target surface | Pixels under the cover glass, which changes the focus plane |
+| Status | 14 provisional profiles at marked settings | One frame set at an unrecorded setting; no profile validated yet |
+
+In short, the display lattice is roughly ten times or more repeatable per measurement and samples the whole field. Its
+absolute accuracy (about ±0.15%) rests on the manufacturer's ppi figure, while the USAF accuracy rests on an unrecorded
+target tolerance. The two are independent references and complement each other: USAF for certified-style bar lengths at
+every zoom, the phone for precision, field distortion, mode ratio and colour.
+
 **To validate the profiles directly:** image the phone at recorded marks (1, 2, 3, 4, 5, 6, 7; at 0.58 the green pitch is
 only ~7.6 px), in the same session as a USAF reference, alternating the two. Zoom 1 would also fill the 0.58–2 gap. The
 display pixels lie under the cover glass at a different height from the target surface. Refocusing therefore brings in
