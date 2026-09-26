@@ -107,6 +107,20 @@ class LabNotesTests(unittest.TestCase):
         self.assertIn('Figures kept locally', message)
         self.assertNotIn('Late post', labnotes.render(note, delivered_at=note['occurred'][1] + timedelta(hours=1)))
 
+    def test_large_images_must_be_previews(self):
+        import struct, zlib
+        def png(width, height):
+            return (b'\x89PNG\r\n\x1a\n' + struct.pack('>I', 13) + b'IHDR' +
+                    struct.pack('>IIBBBBB', width, height, 8, 0, 0, 0, 0) + b'\0' * 4)
+        (self.dir / 'big.png').write_bytes(png(2400, 900))
+        with self.assertRaises(labnotes.NoteError) as error:
+            self.note(attachments='big.png')
+        self.assertIn('preview', str(error.exception))
+        (self.dir / 'small.png').write_bytes(png(1280, 480))
+        self.assertEqual(labnotes.image_size(self.dir / 'small.png'), (1280, 480))
+        self.note(attachments='small.png')
+        self.assertIsNone(labnotes.image_size(self.dir / 'fig.png'))  # not a real image header: treated as a file
+
     def test_invalid_notes_are_rejected(self):
         for header in ({'label': 'MISC'}, {'occurred': '2026-09-24T06:02:00'}, {'attachments': 'missing.png'},
                        {'id': 'Bad ID'}, {'occurred': '2026-09-24T07:00:00Z/2026-09-24T06:00:00Z'}):

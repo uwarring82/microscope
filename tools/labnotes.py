@@ -1,5 +1,6 @@
 """Post dedicated microscope lab notes to the Mattermost lab-book channel through a durable outbox.
 
+  python3 -m tools.labnotes preview IMG... --out DIR   # low-resolution JPEG previews for attachments (macOS sips)
   python3 -m tools.labnotes check NOTE.md...     # validate and print the exact message; sends nothing
   python3 -m tools.labnotes enqueue NOTE.md...   # store in the local outbox (idempotent per event ID)
   python3 -m tools.labnotes deliver [--dry-run]  # send due events; safe to re-run
@@ -28,6 +29,8 @@ import os
 from pathlib import Path
 import re
 import sqlite3
+import struct
+import subprocess
 import sys
 import urllib.error
 import urllib.request
@@ -40,6 +43,9 @@ LABELS = ('NOTE', 'SETTING', 'SERVICE', 'RUN')
 MAX_MESSAGE = 16000             # Mattermost's post limit is 16383 characters
 MAX_ATTACHMENTS = 5
 MAX_ATTACHMENT_BYTES = 20 * 2**20
+MAX_IMAGE_SIDE = 1600           # images are inline previews; full-resolution figures stay in the local packet
+MAX_IMAGE_BYTES = 2**20
+PREVIEW_SIDE = 1280
 LATE_AFTER = timedelta(hours=6)  # posts delivered later than this after the event say so
 TIMEOUT = 30
 SOURCE = 'microscope labnotes'
@@ -105,9 +111,41 @@ def read_note(path):
     for a in attachments:
         if not a.is_file() or a.stat().st_size > MAX_ATTACHMENT_BYTES:
             raise NoteError(f'{path}: attachment missing or larger than 20 MB: {a.name}')
+        size = image_size(a)
+        if size and (max(size) > MAX_IMAGE_SIDE or a.stat().st_size > MAX_IMAGE_BYTES):
+            raise NoteError(f'{path}: {a.name} is {size[0]} x {size[1]} px, {a.stat().st_size // 1024} KB; attach a '
+                            f'low-resolution preview instead (labnotes preview, <= {MAX_IMAGE_SIDE} px and 1 MB)')
     return {'id': header['id'], 'label': header['label'], 'title': header['title'], 'occurred': times,
             'author': header['author'], 'corrects': header.get('corrects'), 'body': body.strip(),
             'attachments': [str(a) for a in attachments], 'path': str(path.resolve())}
+
+
+def image_size(path):
+    """(width, height) of a PNG or JPEG, or None for other files."""
+    data = Path(path).read_bytes()
+    if data[:8] == b'\x89PNG\r\n\x1a\n':
+        return struct.unpack('>II', data[16:24])
+    if data[:2] == b'\xff\xd8':
+        i = 2
+        while i + 9 < len(data):
+            if data[i] != 0xFF:
+                break
+            marker, length = data[i + 1], struct.unpack('>H', data[i + 2:i + 4])[0]
+            if 0xC0 <= marker <= 0xCF and marker not in (0xC4, 0xC8, 0xCC):
+                height, width = struct.unpack('>HH', data[i + 5:i + 9])
+                return width, height
+            i += 2 + length
+    return None
+
+
+def make_preview(source, out_dir, side=PREVIEW_SIDE):
+    """Write a JPEG no larger than `side` pixels next to nothing else; the source file is only read."""
+    source, out_dir = Path(source), Path(out_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    target = out_dir / f'{source.stem}-preview.jpg'
+    subprocess.run(['sips', '-Z', str(side), '-s', 'format', 'jpeg', '-s', 'formatOptions', '80',
+                    str(source), '--out', str(target)], check=True, capture_output=True)
+    return target
 
 
 def neutralise_mentions(text):
@@ -118,7 +156,7 @@ def neutralise_mentions(text):
 def render(note, delivered_at=None, attempt=1, file_transport=True):
     start, end = note['occurred'][0], note['occurred'][-1]
     when = f'{iso(start)}' if start == end else f'{iso(start)} – {iso(end)}'
-    lines = [f"**[{note['label']}] {neutralise_mentions(note['title'])}**",
+    lines = [f"#### [{note['label']}] {neutralise_mentions(note['title'])}",
              f"Event `{note['id']}` · occurred {when} · author {neutralise_mentions(note['author'])} "
              f"(self-reported) · via {SOURCE}"]
     if note['corrects']:
@@ -334,16 +372,26 @@ def main(argv=None):
     commands = parser.add_subparsers(dest='command', required=True)
     for name in ('check', 'enqueue'):
         commands.add_parser(name).add_argument('notes', nargs='+')
+    preview = commands.add_parser('preview')
+    preview.add_argument('images', nargs='+')
+    preview.add_argument('--out', required=True)
+    preview.add_argument('--side', type=int, default=PREVIEW_SIDE)
     commands.add_parser('deliver').add_argument('--dry-run', action='store_true')
     commands.add_parser('status')
     commands.add_parser('retry').add_argument('event_id')
     args = parser.parse_args(argv)
     try:
+        if args.command == 'preview':
+            for image in args.images:
+                target = make_preview(image, args.out, args.side)
+                width, height = image_size(target)
+                print(f'{target}  {width} x {height} px  {target.stat().st_size // 1024} KB')
+            return 0
         if args.command == 'check':
             for path in args.notes:
                 note = read_note(path)
-                print(f"--- {note['id']} ({len(note['attachments'])} attachments: "
-                      f"{', '.join(Path(a).name for a in note['attachments']) or 'none'})")
+                files = ', '.join(f'{Path(a).name} ({Path(a).stat().st_size // 1024} KB)' for a in note['attachments'])
+                print(f"--- {note['id']} ({len(note['attachments'])} attachments: {files or 'none'})")
                 print(render(note, delivered_at=now()))
             return 0
         db = outbox(args.outbox)

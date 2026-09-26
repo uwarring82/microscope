@@ -85,13 +85,14 @@ in every post, and a "late post" marker when a note is delivered long after the 
 Markdown file with a short header; see the module docstring.
 
 ```sh
+python3 -m tools.labnotes preview FIG.png --out DIR   # low-resolution JPEG preview (≤1280 px) to attach
 python3 -m tools.labnotes check NOTE.md      # print the exact message; sends nothing
 python3 -m tools.labnotes enqueue NOTE.md    # durable local outbox (artifacts/labnotes/), idempotent per event ID
 python3 -m tools.labnotes deliver            # send due events, with retry and backoff
 python3 -m tools.labnotes status
 ```
 
-Delivery is a separate step, so acquisition never waits for the network. A changed note under an existing ID
+Posts are Markdown. Image attachments must be low-resolution previews (≤1600 px, ≤1 MB), which Mattermost shows inline; full-resolution figures and raw data stay local. Delivery is a separate step, so acquisition never waits for the network. A changed note under an existing ID
 is refused: post a correction with `corrects:` instead. Mentions such as `@channel` are neutralised. A
 timeout may have posted anyway, so a retry is marked in the text. With the API transport, the channel is
 checked for the event ID before re-posting. Credentials stay outside Git in

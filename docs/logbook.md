@@ -275,3 +275,4 @@ Record consequential implementation decisions, evidence, limitations and follow-
   - Late-post marker. Secrets are redacted in errors and status, including a webhook key echoed in a server response (found by a test).
   - Seven tests against a local mock Mattermost server. `make test` passed natively plus 52 Python and 7 JavaScript tests.
 - Drafted two notes locally (not posted) for the calibration and the comparison, with figures and report PDFs as attachments. No webhook, bot or token exists yet, and nothing has been sent to Mattermost. Choosing the transport, creating credentials and posting need the operator's go-ahead.
+- On request, posts render as Markdown with a heading line, and image attachments are low-resolution inline previews. `labnotes preview` writes ≤1280 px JPEGs with macOS `sips`, and notes with images over 1600 px or 1 MB are refused. The two drafts now attach 63–225 KB previews plus the report PDF. A test for the image-size check was added.
