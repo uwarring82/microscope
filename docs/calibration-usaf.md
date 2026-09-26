@@ -325,3 +325,44 @@ The [validation plan](calibration-validation-plan.md) now begins with a 30-frame
 pilot (2/4/7, five returns from one direction, two frames per return). Larger
 runs depend on the tolerance and pilot result; height and field checks remain
 pending. No new camera acquisition was performed for this comparison.
+
+## Independent display-lattice scale: iPhone 17 Pro (analysis 2026-09-26)
+
+The operator identified the smartphone in the dataset `phone-screen-20260923` as an **iPhone 17 Pro**. That dataset holds
+18 raw frames taken on 2026-09-23 at 10:22 UTC, about 8 h before the USAF series. Apple specifies its display as
+2622 × 1206 pixels at **460 ppi** ([Apple tech specs](https://support.apple.com/en-us/125090)). That gives a pixel pitch of
+p = 25.4 mm / 460 = **55.22 µm**, with about ±0.11% from rounding the ppi; the stated 6.27 in diagonal gives 460.3 ppi.
+The resolved OLED layout has one green subpixel per logical pixel on a square lattice of pitch p. Red and blue lie on a
+square lattice of pitch p√2, with twice as many greens as reds. The layout is therefore a physical length standard
+independent of the USAF target.
+
+**Method.** Intensity-weighted centroids of every green subpixel (raw Bayer planes, ~2200 per full frame), then a
+least-squares Bravais-lattice fit. The scale is p divided by the square root of the lattice cell area, cross-checked with
+the red lattice (factor √2). Local fits in 4 × 3 blocks, and a joint radial term, test field dependence. Frames 006–011
+(full resolution) and 012–017 (preview) cover the whole field; frames 000–005 cover it only partly and are not used.
+
+| Quantity | Result |
+| --- | --- |
+| Scale, 2592 × 1944 (whole field / image centre) | **1.1806 / 1.1812 µm/px**, total uncertainty ±0.15% (specification-dominated) |
+| Scale, 1280 × 960 | **2.3612 µm/px** |
+| Preview ÷ full ratio | **1.99992** (six frames each; spread 0.005%) |
+| Pixel aspect (lattice axis-length ratio; angle) | equal within 0.02%; 90° within 0.03° |
+| Red vs green lattice scale | agree within 0.02% |
+| Field dependence at this setting | local scale within 0.12% over the full field; radial term +0.10% at the corner (slight pincushion) in both modes |
+
+**Comparison with the USAF profiles.**
+- **The zoom ring was not recorded for the phone frames, so the absolute scales cannot be compared.** 1.1806 µm/px lies
+  between the full-resolution profiles for marks 3 (1.4607) and 4 (1.0893), 7.7% from mark 4. The ring was therefore not
+  on a mark, or the optical configuration differed. Reciprocal interpolation places it near ring reading 3.7, which is a
+  rough estimate, not a result.
+- **Comparisons that do not depend on zoom agree with the USAF analysis and tighten it:**
+  - The mode ratio is 2.000 to 0.01%. The USAF per-mark ratios of 1.997–2.006 therefore show USAF measurement scatter,
+    not an optical effect.
+  - Pixel squareness is better than 0.02%. The USAF x/y differences of 0.3–0.4% are therefore analysis-side as well.
+  - The first field measurement, valid at this ring setting only, shows scale variations ≤0.13% across the full field.
+
+**To validate the profiles directly:** image the phone at recorded marks (1, 2, 3, 4, 5, 6, 7; at 0.58 the green pitch is
+only ~7.6 px), in the same session as a USAF reference, alternating the two. Zoom 1 would also fill the 0.58–2 gap. The
+display pixels lie under the cover glass at a different height from the target surface. Refocusing therefore brings in
+the unvalidated height/focus term, so a phone-vs-USAF difference at one mark measures that term together with ring
+return.

@@ -24,6 +24,7 @@ and history. For a new measurement session, follow the [session procedure](sessi
 | Intermediate zoom settings | Rough estimates only; no accuracy assigned. The 0.58–2 range has no interior reference. |
 | Total measurement uncertainty | **Unknown.** Fit precision and image-analysis checks are small (mostly well below 1%), but ring return, specimen/focus height, target tolerance and field distortion are unmeasured. |
 | Relative scale on a specimen | Seven landmarks seen at zooms 2, 4 and 7 on the M4 mirror agree to within 0.23%. This checks zoom-to-zoom ratios only, not absolute scale. |
+| Independent display-lattice scale | iPhone 17 Pro OLED pitch (460 ppi): 1.1806 µm/px at an unrecorded ring setting (between marks 3 and 4), ±0.15%. It confirms a mode ratio of exactly 2.000, square pixels and ≤0.13% field variation at that setting. No USAF profile validated yet: the phone needs to be imaged at recorded marks. |
 | Physical validation | **Planned, not started.** See the [validation plan](calibration-validation-plan.md); first step is the ring-return pilot at zooms 2/4/7. |
 
 ## M4 mirror inspection
