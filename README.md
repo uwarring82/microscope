@@ -76,6 +76,29 @@ The original Di-Li software copy was subsequently found in a user-supplied labor
 
 The initial SDK investigation recovered the relevant `VA500C` USB protocol from the old x86_64 Mac executable. The new C/libusb implementation now captures real data on this ARM64 Mac; no vendor binary is executed. Ten sequential dark frames, setting changes, three stop/start cycles, an illuminated-sample exposure check, and full-resolution acquisition/mode-switch checks passed. See [native SDK notes](docs/native-sdk.md) for evidence and remaining validation.
 
+## Lab notes to Mattermost
+
+`tools/labnotes.py` posts dedicated lab notes, not every capture, to the group's lab-book channel
+(`logbook-microscope` in the `oneworld` team). It follows the lab's lab-book conventions for machine
+channels: labels `[NOTE]`, `[SETTING]`, `[SERVICE]` and `[RUN]`, a stable event ID and the UTC event time
+in every post, and a "late post" marker when a note is delivered long after the event. A note is a
+Markdown file with a short header; see the module docstring.
+
+```sh
+python3 -m tools.labnotes check NOTE.md      # print the exact message; sends nothing
+python3 -m tools.labnotes enqueue NOTE.md    # durable local outbox (artifacts/labnotes/), idempotent per event ID
+python3 -m tools.labnotes deliver            # send due events, with retry and backoff
+python3 -m tools.labnotes status
+```
+
+Delivery is a separate step, so acquisition never waits for the network. A changed note under an existing ID
+is refused: post a correction with `corrects:` instead. Mentions such as `@channel` are neutralised. A
+timeout may have posted anyway, so a retry is marked in the text. With the API transport, the channel is
+checked for the event ID before re-posting. Credentials stay outside Git in
+`~/.config/microscope-labnotes/config.json` (mode 600). Use either a channel-locked incoming webhook (text only)
+or a dedicated bot token (text and attachments), never the archiver's administrator token. Notes and the
+outbox are local lab data.
+
 ## Development
 
 ```sh
