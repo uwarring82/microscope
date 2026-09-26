@@ -97,7 +97,7 @@ is refused: post a correction with `corrects:` instead. Mentions such as `@chann
 timeout may have posted anyway, so a retry is marked in the text. With the API transport, the channel is
 checked for the event ID before re-posting. Credentials stay outside Git in
 `~/.config/microscope-labnotes/config.json` (mode 600). Use either a channel-locked incoming webhook (text only)
-or a dedicated bot token (text and attachments), never the archiver's administrator token. Notes and the
+or a token (text and attachments). A `token_file` option reads the token from an existing private `.env`, so it is not copied. The current pilot posts from the operator's own computer with his personal access token, in his name (his decision, 2026-09-26). An app used by other lab members needs a bot token instead. Notes and the
 outbox are local lab data.
 
 ## Development

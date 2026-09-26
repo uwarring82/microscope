@@ -189,6 +189,21 @@ class LabNotesTests(unittest.TestCase):
         config = labnotes.load_config(path)
         self.assertEqual(labnotes.redact('failed at https://example.invalid/hooks/abc', config), 'failed at <redacted>')
 
+    def test_token_can_be_read_from_a_private_env_file_without_copying_it(self):
+        env = self.dir / '.env'
+        env.write_text('OTHER=1\nMATTERMOST_TOKEN="tok-123"\n')
+        path = self.dir / 'config.json'
+        path.write_text(json.dumps({'transport': 'api', 'server': 'https://example.invalid', 'token_file': str(env),
+                                    'token_key': 'MATTERMOST_TOKEN', 'team': 'oneworld', 'channel': 'logbook-microscope'}))
+        os.chmod(path, 0o600)
+        os.chmod(env, 0o644)
+        with self.assertRaises(SystemExit):
+            labnotes.load_config(path)  # a world-readable token file is refused
+        os.chmod(env, 0o600)
+        config = labnotes.load_config(path)
+        self.assertEqual(config['token'], 'tok-123')
+        self.assertEqual(labnotes.redact('bad token tok-123', config), 'bad token <redacted>')
+
 
 if __name__ == '__main__':
     unittest.main()

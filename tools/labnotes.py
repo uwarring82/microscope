@@ -18,7 +18,10 @@ or the file named by MICROSCOPE_LABNOTES_CONFIG:
   {"transport": "webhook", "webhook_url": "https://.../hooks/..."}            text only
   {"transport": "api", "server": "https://...", "token": "...",               text and files
    "team": "oneworld", "channel": "logbook-microscope"}
-Use a channel-locked incoming webhook or a dedicated bot token; never the archiver's admin token.
+Instead of "token", "token_file" and "token_key" read KEY=value from an existing private (mode 600)
+.env file, so a secret is not copied. For shared use, prefer a channel-scoped webhook or a bot token.
+The pilot (2026-09-26, operator's decision) posts from the operator's own computer with the operator's
+personal access token, i.e. in the operator's name.
 """
 import argparse
 from datetime import datetime, timedelta, timezone
@@ -224,6 +227,19 @@ def load_config(path=None):
     if path.stat().st_mode & 0o077:
         raise SystemExit(f'{path} is readable by others; run: chmod 600 {path}')
     config = json.loads(path.read_text())
+    if config.get('token_file'):
+        token_file = Path(config['token_file']).expanduser()
+        if not token_file.is_file():
+            raise SystemExit(f'Token file not found: {token_file}')
+        if token_file.stat().st_mode & 0o077:
+            raise SystemExit(f'{token_file} is readable by others; run: chmod 600 {token_file}')
+        key = config.get('token_key') or 'MATTERMOST_TOKEN'
+        for line in token_file.read_text().splitlines():
+            name, sep, value = line.partition('=')
+            if sep and name.strip() == key:
+                config['token'] = value.strip().strip('"\'')
+        if not config.get('token'):
+            raise SystemExit(f'{key} not found in {token_file}')
     if config.get('transport') == 'webhook' and str(config.get('webhook_url', '')).startswith('https://'):
         return config
     if config.get('transport') == 'api' and all(config.get(k) for k in ('server', 'token', 'team', 'channel')):
