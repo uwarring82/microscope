@@ -2,7 +2,7 @@
 
 A local web UI and experimental native macOS SDK for the USB-connected Di-Li **5MP-B CMOS Camera**.
 
-[Current status](docs/status.md) · [Development logbook](docs/logbook.md) · [Session/data format](docs/data-format.md) · [FAIR practice](docs/fair.md) · [Citation](CITATION.cff) · [MIT license](LICENSE)
+[Current status](docs/status.md) · [Session procedure](docs/session-procedure.md) · [Development logbook](docs/logbook.md) · [Session/data format](docs/data-format.md) · [FAIR practice](docs/fair.md) · [Citation](CITATION.cff) · [MIT license](LICENSE)
 
 ```sh
 make                       # build the native SDK; uses installed libusb

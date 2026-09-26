@@ -2,7 +2,7 @@
 
 Snapshot: **24 September 2026** (software v0.2.1).
 Use this page for the current state; the [logbook](logbook.md) holds the evidence
-and history. Update this page whenever a status below changes.
+and history. For a new measurement session, follow the [session procedure](session-procedure.md). Update this page whenever a status below changes.
 
 ## Software
 
