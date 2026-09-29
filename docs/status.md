@@ -1,6 +1,6 @@
 # Project status
 
-Snapshot: **24 September 2026** (software v0.2.1).
+Snapshot: **30 September 2026** (software v0.2.1).
 Use this page for the current state; the [logbook](logbook.md) holds the evidence
 and history. For a new measurement session, follow the [session procedure](session-procedure.md). Update this page whenever a status below changes.
 
@@ -8,12 +8,13 @@ and history. For a new measurement session, follow the [session procedure](sessi
 
 | Area | Status |
 | --- | --- |
-| Native USB capture, both modes | Working on Apple Silicon; hardware-free tests pass (native, 41 Python, 7 JavaScript) and run in macOS CI. |
+| Native USB capture, both modes | Working on Apple Silicon; hardware-free tests pass (native, 62 Python, 7 JavaScript) and run in macOS CI. |
 | Exact-frame capture, sessions, FITS/PNG exports | Working; replay, checksum and FITS payload checks recorded in the logbook. |
 | Capture provenance | Captures made **from now on** record `modified_paths`, `snapshot_at` and `snapshot_scope`. Captures made before the restart after `a44e352` record only a `modified` boolean. |
 | Specimen sessions | `tools/specimen_session.py` captures fields with the matching profile attached, verifies files and draws contact sheets/ledgers; use with the [acquisition sheet](acquisition-sheet.md). Bracketing is tested against a simulated camera only. |
-| Lab notes to Mattermost | `tools/labnotes.py` posts dedicated notes to `logbook-microscope` (team `oneworld`) through a local outbox. Pilot in use since 2026-09-26: the operator's personal token, from his computer, in his name; first two notes posted. A bot token is needed before other people run it. |
-| Open software issues | The rightmost raw column is always zero; its cause is not known. The sensor can saturate at about 246–254 DN without reaching 255 (seen 2026-09-24), so the server's count at 255 underestimates clipping; the session tool also reports % ≥240. Saturation level, black offset (about 10 DN observed) and exposure time in seconds are not characterized. |
+| Lab notes to Mattermost | `tools/labnotes.py` posts dedicated notes to `logbook-microscope` (team `oneworld`) through a local outbox. Pilot in use since 2026-09-26: the operator's personal token, from the operator's computer and in the operator's name; three notes posted. A bot token is needed before other people run it. |
+| Display-lattice analysis | `tools/display_lattice.py` (numpy/scipy/matplotlib, analysis only): lattice scale per colour (centroid and Fourier fits), radial term, lattice modulation for through-focus series, and colour-cycle classification by lattice frequency. Synthetic tests only; validated on the 29 September phone frames. |
+| Open software issues | The rightmost raw column is always zero; its cause is not known. The sensor can saturate at about 246–254 DN without reaching 255 (seen 2026-09-24), so the server's count at 255 underestimates clipping; the session tool also reports % ≥240. Sensor black measured with the objective capped (29 Sep): 9.9–10.0 DN at gain 50, nearly flat from 515 to 3000 lines. Saturation level and exposure time in seconds are not characterized. |
 
 ## Spatial calibration
 
@@ -21,10 +22,10 @@ and history. For a new measurement session, follow the [session procedure](sessi
 | --- | --- |
 | USAF profiles, zoom marks 0.58, 2, 3, 4, 5, 6, 7 × both resolutions | **14 provisional profiles**, stored locally in `sessions/calibrations.json` (not in Git). [Method and results](calibration-usaf.md). |
 | Use | Only at a recorded ring mark, with the matching resolution and the unchanged default objective/adapter. |
-| Intermediate zoom settings | Rough estimates only; no accuracy assigned. The 0.58–2 range has no interior reference. |
+| Intermediate zoom settings | Rough estimates only; no accuracy assigned. The 0.58–2 range has no USAF reference; the phone lattice gives zoom 1 (see below). |
 | Total measurement uncertainty | **Unknown.** Fit precision and image-analysis checks are small (mostly well below 1%), but ring return, specimen/focus height, target tolerance and field distortion are unmeasured. |
 | Relative scale on a specimen | Seven landmarks seen at zooms 2, 4 and 7 on the M4 mirror agree to within 0.23%. This checks zoom-to-zoom ratios only, not absolute scale. |
-| Independent display-lattice scale | iPhone 17 Pro OLED pitch (460 ppi): 1.1806 µm/px at an unrecorded ring setting (between marks 3 and 4), ±0.15%. It confirms a mode ratio of exactly 2.000, square pixels and ≤0.13% field variation at that setting. No USAF profile validated yet: the phone needs to be imaged at recorded marks. |
+| Independent display-lattice scale | iPhone 17 Pro OLED pitch (460 ppi, ±0.11%) at recorded marks, 29 Sep (draft report r1, pending operator review): green centre scale −0.11% to +0.37% from the USAF profiles at marks 2–7, within the USAF diagnostics; **+1.46% at 0.58, unexplained**. Zoom 1: 4.4158 µm/px (full), not installed as a profile. Mode ratio 1.9991–2.0002; radial term −0.18% to +0.13% at the corner; lateral colour ≤0.22% at the centre; scale changes by about −0.1% per fine-focus turn at marks 4 and 7 (+0.03% at 2). Axial colour indicative only (colour crosstalk). |
 | Physical validation | **Planned, not started.** See the [validation plan](calibration-validation-plan.md); first step is the ring-return pilot at zooms 2/4/7. |
 
 ## M4 mirror inspection
@@ -35,7 +36,8 @@ and history. For a new measurement session, follow the [session procedure](sessi
 | Report | Local illustrated report, revision 2 (7 pages). Documents appearance only. |
 | Interpretation | Imaging appears scatter-dominated (dark-field-like); this is inferred, since the illumination was not recorded. No cause, coating damage, dimensions or grade is assigned. |
 | Software record of these captures | v0.2.1, commit `a99db05`, `modified: true`; which files were modified cannot be reconstructed. |
-| Backlit comparison (24 Sep) | Used and new M4 in one mirror mount against the empty mount: used ÷ new relative transmittance 0.571 green (0.52–0.62) and 0.906 blue (0.85–0.96) under the tested assumptions; red not constrained. Consistent at three zooms; lower across all sampled fields, including background regions. Local draft report r2. Band-integrated and setup-specific; not a reflectance, spectrum or diagnosis; black offset from opaque areas (dark frames pending). |
+| Backlit comparison (24 Sep) | Used and new M4 in one mirror mount against the empty mount: used ÷ new relative transmittance 0.571 green (0.52–0.62) and 0.906 blue (0.85–0.96) under the tested assumptions; red not constrained. Consistent at three zooms; lower across all sampled fields, including background regions. Superseded by r3 below. |
+| Three-mirror comparison (r3, 24 and 29 Sep) | Sensor black from capped darks; M4 removed from the cavity on 29 Sep added, with the used M4 as a bridge between sessions. Green: used ÷ new 0.579 (±5.0%), removed ÷ used 1.464 (±4.3%), removed ÷ new 0.854 (±9.4%, through the bridge); the bridge reproduces within 1.1%. Local draft report r3, pending operator review. Band-integrated and setup-specific; no cause assigned. |
 | Next evidence | Focus series with 2–3 illumination directions at the zoom-4 streak field; a registered repeat inspection with fixed settings; performance measured separately at the operating wavelength. Acceptance criteria not yet agreed with the setup's users. |
 
 ## Data stewardship
@@ -43,3 +45,9 @@ and history. For a new measurement session, follow the [session procedure](sessi
 Raw data, sessions, calibration profiles and reports stay local and are ignored
 by Git. They are backed up only as local checksum-verified ZIP packets, with no
 external backup. No data license or DOI has been assigned.
+
+The repository currently lies in `~/Documents`, which iCloud syncs with storage
+optimisation on: `sessions/` and `artifacts/` are therefore also stored in the
+operator's iCloud, and macOS evicts local copies when the disk is short (logbook,
+30 September). Checksums still verify. Decision pending: move the project out of
+iCloud, keep it downloaded, or free disk space.
