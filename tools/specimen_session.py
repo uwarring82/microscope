@@ -132,7 +132,7 @@ def capture(args):
                 _, headers = server.request('/api/camera/frame.png', raw=True)
                 record = server.request('/api/capture', {
                     'frame_id': headers['X-Frame-ID'], 'session_id': session,
-                    'session_name': f'{args.sample} - {field_id}', 'sample_id': args.sample,
+                    'session_name': f'{field_id} - {args.sample}'[:120], 'sample_id': args.sample,
                     'objective': OBJECTIVE, 'optical_configuration': configuration(args.zoom),
                     'calibration_id': profile['id'] if profile else None, 'markers': [],
                     'notes': notes + (' ' + PROVISIONAL if profile else ' UNCALIBRATED: no matching profile.')})

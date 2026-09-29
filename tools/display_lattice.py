@@ -110,18 +110,21 @@ def analyse_frame(raw, pitch_um=PITCH_UM):
     height, width = raw.shape
     found = {c: spots(P[c], c) for c in 'RGB'}
     level = {c: float(np.percentile(P[c], 99.5) - np.percentile(P[c], 50)) for c in 'RGB'}
-    lit = [c for c in 'RGB' if level[c] > 0.25 * max(level.values()) and len(found[c][0]) >= 30]
-    shown = 'white' if lit == ['R', 'G', 'B'] or ('R' in lit and 'G' in lit) else (lit[0] if len(lit) == 1 else '+'.join(lit))
-    if shown == 'white' and len(found['G'][0]) and len(found['B'][0]):
-        # The blue plane also records green light: keep only detections away from green subpixels.
-        green = cKDTree(found['G'][0])
-        spacing = np.median(green.query(found['G'][0], k=2)[0][:, 1])
-        far = green.query(found['B'][0])[0] > 0.3 * spacing
-        found['B'] = (found['B'][0][far], found['B'][1][far])
+    shown = displayed_colour(level)
+    if shown != 'white':
+        lit = [shown]  # single colour: the other Bayer planes only see leakage of the same subpixels
+    else:
+        lit = ['R', 'G', 'B']
+        if len(found['G'][0]) and len(found['B'][0]):
+            # The blue plane also records green light: keep only detections away from green subpixels.
+            green = cKDTree(found['G'][0])
+            spacing = np.median(green.query(found['G'][0], k=2)[0][:, 1])
+            far = green.query(found['B'][0])[0] > 0.3 * spacing
+            found['B'] = (found['B'][0][far], found['B'][1][far])
     out = {'shown': shown, 'channels': {}}
     for c in 'RGB':
         points, radius = found[c]
-        lattice = fit_lattice(points) if c in lit or shown == 'white' else None
+        lattice = fit_lattice(points) if c in lit else None
         if not lattice:
             continue
         k, centre_area = radial_term(points, lattice, width, height)
@@ -133,7 +136,28 @@ def analyse_frame(raw, pitch_um=PITCH_UM):
                                                     np.hypot(*lattice['a1']) / np.hypot(*lattice['a2'])))),
             'radial_k': k, 'rms_px': lattice['rms'], 'n': lattice['n'],
             'spot_rms_radius_px': float(np.median(radius[lattice['inliers']]))}
+    # Red and blue share the p*sqrt(2) lattice. A blue fit far from red (or from green when red is absent) latched
+    # onto green light leaking into the blue plane; drop it rather than report a wrong scale.
+    ch = out['channels']
+    if 'B' in ch:
+        ref = ch.get('R') or ch.get('G')
+        if ref and abs(ch['B']['um_per_px'] / ref['um_per_px'] - 1) > 0.05:
+            out['rejected_blue'] = ch.pop('B')['um_per_px']
     return out
+
+
+def displayed_colour(level):
+    """White or the single displayed colour, from the signal level (p99.5 - median) of each Bayer plane.
+    Thresholds from 2026-09-29 frames: red-only G/R 0.21; green-only R/G 0.40, B/G 0.22; white G/R 0.68 or more."""
+    dominant = max(level, key=level.get)
+    top = max(level[dominant], 1e-9)
+    if dominant == 'R' and level['G'] / top < 0.35 and level['B'] / top < 0.25:
+        return 'R'
+    if dominant == 'G' and level['R'] / top < 0.5 and level['B'] / top < 0.35:
+        return 'G'
+    if dominant == 'B':
+        return 'B'
+    return 'white'
 
 
 def focus_step(field):

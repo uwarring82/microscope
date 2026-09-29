@@ -60,6 +60,12 @@ class DisplayLatticeTests(unittest.TestCase):
             self.assertEqual(result['shown'], colour)
             self.assertIn(colour, result['channels'])
 
+    def test_displayed_colour_from_measured_channel_levels(self):
+        # Bayer-plane levels measured on 2026-09-29 (iPhone 17 Pro, zoom 4): light leaks into neighbouring planes.
+        cases = {'white': (138, 94, 19), 'R': (197, 42, 20), 'G': (71, 178, 40), 'B': (7, 15, 43)}
+        for expected, (r, g, b) in cases.items():
+            self.assertEqual(dl.displayed_colour({'R': r, 'G': g, 'B': b}), expected)
+
     def test_focus_step_is_read_from_field_name_or_note(self):
         self.assertEqual(dl.focus_step({'field': 'z4 focus+2'}), 2.0)
         self.assertEqual(dl.focus_step({'field': 'z4', 'position_note': 'focus=-3 steps'}), -3.0)

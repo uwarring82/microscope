@@ -17,6 +17,11 @@ which is not in Git; use them as templates.
   - **dark frames** with the light path blocked, at every exposure used, before and after the series (measures the
     black offset directly);
   - **repeats**: alternate the objects (A → reference → B → reference → A …) with at least three placements each.
+  - **dark frames with the objective capped** (not only the light source off): room light enters through the
+    specimen plane and raises uncapped "dark" frames with exposure. The capped sensor black is flat at about 9.9 DN.
+  - **a bridge sample** measured in an earlier session, whenever results are to be compared across days: the
+    source brightness and spectrum can differ between sessions.
+- **Room lights off** during backlit or transmission runs; if they must stay on, keep them unchanged for the run.
 - **Record the setup** that later analysis depends on: illumination source, geometry and settings; the mount or holder,
   which is the same for all objects if their transmission is to be compared; orientation and the side facing the camera;
   packaging, cleaning and handling. Transcribe labels verbatim.
@@ -100,3 +105,9 @@ logbook entry that covers collection only, with no interpretation yet.
 - A single reinsertion measures placement and elapsed time only once. Repeat placements and take dark frames.
 - Overstated first-draft claims ("uniform", "features <1%") were corrected after review. Keep claims to what the
   statistic shows.
+- 29 September: the backlight was 2–4× dimmer than five days earlier and not reproducible. Empty references in the
+  same session and a bridge sample (last week's mirror) made the comparison work. The opaque-area black offset
+  used on 24 September included light; capped dark frames showed the true sensor black.
+- Display-lattice (phone) calibration: focus on green; a colour-cycling page gives single-colour frames without
+  touching the phone (40 frames at ~1.2 s span a 48 s cycle); a through-focus series in full fine-focus turns showed
+  scale changing with focus by −0.11 to −0.14% per turn at zoom 4 and 7, but +0.03% per turn at zoom 2.
