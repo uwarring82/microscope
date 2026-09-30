@@ -72,6 +72,8 @@ class DisplayLatticeTests(unittest.TestCase):
         self.assertIsNotNone(fit)
         self.assertAlmostEqual(np.sqrt(fit['area_raw']) / pitch_px, 1, delta=1e-3)
         self.assertAlmostEqual(fit['angle_deg'], 90, delta=0.3)
+        for g in fit['reciprocal_raw']:  # reciprocal vectors of a square lattice have length 1/pitch
+            self.assertAlmostEqual(np.hypot(*g) * pitch_px, 1, delta=2e-3)
         self.assertIsNone(dl.fft_lattice(dl.planes(raw)['G'], expected_period_raw=3.0))  # beyond Nyquist
 
     def test_displayed_colour_from_measured_channel_levels(self):

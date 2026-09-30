@@ -13,8 +13,9 @@ pixel per colour:
     focus step given in the field name (e.g. "focus+2") or note ("focus=+2"); the step of maximum modulation per colour.
 Frames of a colour-cycling field are classified by each plane's amplitude at its own lattice frequency, relative to the
 field's maximum, in four row bands; a frame whose bands disagree changed colour during readout and is marked "mixed".
-Light leaking into a neighbouring Bayer plane has the other colour's lattice frequencies and does not count. Other
-fields are taken as white. In white frames the blue plane also sees green light, so blue detections close to green
+Frequency selection removes leakage at other lattice frequencies (green light in the blue plane) but not between red and
+blue, which share their lattice frequency, nor the p*sqrt(2) component that green subpixels of alternating orientation
+put into the red plane; check the classification against the page's known colour order. Other fields are taken as white. In white frames the blue plane also sees green light, so blue detections close to green
 subpixels are discarded.
 
 Needs numpy, scipy and matplotlib (analysis only). Results: artifacts/captures/SERIES/display-lattice/.
@@ -99,7 +100,8 @@ def fft_lattice(plane, expected_period_raw, tolerance=0.15):
     `plane` is one Bayer plane (half resolution). The two fundamental peaks nearest the expected period (raw px,
     used only to choose between the lattice and its harmonics or the p*sqrt(2) lattice) are located with a quadratic
     fit of the log-magnitude around each maximum. Returns the lattice cell area in raw px^2, both periods and their
-    angle, or None when no clear peak pair exists (for example a lattice below the plane's Nyquist limit)."""
+    angle, the reciprocal vectors (cycles per raw px), or None when no clear peak pair exists (for example a lattice
+    below the plane's Nyquist limit)."""
     img = plane[:, :plane.shape[1] - plane.shape[1] % 2].astype(float)
     img = img - img.mean()
     img *= np.hanning(img.shape[0])[:, None] * np.hanning(img.shape[1])[None, :]
@@ -133,7 +135,10 @@ def fft_lattice(plane, expected_period_raw, tolerance=0.15):
     if cross < 0.5 * np.hypot(*g1) * np.hypot(*g2):
         return None                                      # the two peaks are not a lattice basis
     area_plane = 1 / cross                               # real-space cell area in plane px^2
-    return {'area_raw': 4 * area_plane, 'period1_raw': 2 / np.hypot(*g1), 'period2_raw': 2 / np.hypot(*g2),
+    # reciprocal vectors in cycles per raw px: with lattice vectors a_j (raw px), g_i . a_j = delta_ij, so the scale along an
+    # image direction d is pitch * |G d| for G with rows g1, g2 (sign and order do not matter)
+    return {'area_raw': 4 * area_plane, 'reciprocal_raw': [(g1 / 2).tolist(), (g2 / 2).tolist()],
+            'period1_raw': 2 / np.hypot(*g1), 'period2_raw': 2 / np.hypot(*g2),
             'angle_deg': float(np.degrees(np.arccos(abs(g1 @ g2) / np.hypot(*g1) / np.hypot(*g2))))}
 
 
@@ -142,8 +147,9 @@ def lattice_modulation(plane, expected_period_raw, tolerance=0.15):
 
     Returns the cosine amplitude of the two fundamental Fourier peaks (root of the power within +-2 bins of each peak,
     mean of both; DN) and the modulation (amplitude over the plane mean), or None beyond the plane's Nyquist limit. The
-    modulation falls as the image defocuses. A lattice at other frequencies, such as another colour's light leaking
-    into this plane, does not contribute."""
+    modulation falls as the image defocuses. A lattice at other frequencies does not contribute, but red and blue share
+    their lattice frequency and green subpixels of alternating orientation add a p*sqrt(2) component, so in a frame
+    showing several colours a plane's modulation mixes them."""
     img = plane[:, :plane.shape[1] - plane.shape[1] % 2].astype(float)
     h, w = img.shape
     power = np.abs(np.fft.fftshift(np.fft.fft2(img * np.hanning(h)[:, None] * np.hanning(w)[None, :]))) ** 2
@@ -181,7 +187,7 @@ def classify_cycle(frames, on=0.5):
     `frames` holds band_amplitudes() per frame. Each amplitude is normalised by the field's maximum for that band and
     colour, so every colour must appear at least once in the field. A colour counts as shown above `on`: all three ->
     'white', one -> that colour; other combinations, or bands that disagree (the page changed colour during the
-    rolling readout) -> 'mixed'."""
+    rolling readout) -> 'mixed'. Leakage at a plane's own frequency (red/blue, green in red) must stay below `on`."""
     top = [{c: max(f[b][c] for f in frames) or 1e-9 for c in 'RGB'} for b in range(len(frames[0]))]
     labels = []
     for f in frames:

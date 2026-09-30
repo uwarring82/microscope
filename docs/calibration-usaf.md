@@ -331,7 +331,8 @@ pending. No new camera acquisition was performed for this comparison.
 The operator identified the smartphone in the dataset `phone-screen-20260923` as an **iPhone 17 Pro**. That dataset holds
 18 raw frames taken on 2026-09-23 at 10:22 UTC, about 8 h before the USAF series. Apple specifies its display as
 2622 × 1206 pixels at **460 ppi** ([Apple tech specs](https://support.apple.com/en-us/125090)). That gives a pixel pitch of
-p = 25.4 mm / 460 = **55.22 µm**, with about ±0.11% from rounding the ppi; the stated 6.27 in diagonal gives 460.3 ppi.
+p = 25.4 mm / 460 = **55.22 µm** (nominal). Nearest-integer rounding of the ppi would contribute up to about 0.11%; the stated
+6.27 in diagonal gives 460.3 ppi. The physical pitch tolerance and the total absolute uncertainty have not been established.
 The resolved OLED layout has one green subpixel per logical pixel on a square lattice of pitch p. Red and blue lie on a
 square lattice of pitch p√2, with twice as many greens as reds. The layout is therefore a physical length standard
 independent of the USAF target.
@@ -343,7 +344,7 @@ the red lattice (factor √2). Local fits in 4 × 3 blocks, and a joint radial t
 
 | Quantity | Result |
 | --- | --- |
-| Scale, 2592 × 1944 (whole field / image centre) | **1.1806 / 1.1812 µm/px**, total uncertainty ±0.15% (specification-dominated) |
+| Scale, 2592 × 1944 (whole field / image centre) | **1.1806 / 1.1812 µm/px** from the nominal pitch; absolute uncertainty not established (corrected 2026-09-30: an earlier ±0.15% “total uncertainty” rested only on ppi rounding) |
 | Scale, 1280 × 960 | **2.3612 µm/px** |
 | Preview ÷ full ratio | **1.99992** (six frames each; spread 0.005%) |
 | Pixel aspect (lattice axis-length ratio; angle) | equal within 0.02%; 90° within 0.03° |
@@ -366,7 +367,7 @@ at recorded marks is planned.
 
 | Aspect | USAF 1951 target (Thorlabs R1DS1N) | iPhone 17 Pro display lattice |
 | --- | --- | --- |
-| Length reference | Bar spacings from the USAF group/element formula; target certificate and tolerance not recorded | Pixel pitch 55.22 µm from the 460 ppi specification (±0.1% from rounding); a manufacturer specification, not a certificate |
+| Length reference | Bar spacings from the USAF group/element formula; target certificate and tolerance not recorded | Nominal pixel pitch 55.22 µm from the 460 ppi specification; rounding would contribute up to about 0.1%, the pitch tolerance is not stated; a manufacturer specification, not a certificate |
 | Features measured | 12 bar intervals per capture (group 2: 281–500 µm at zoom 0.58–2; group 4: 70–125 µm at zoom 3–7), near the image centre | About 2200 subpixel centroids per full frame (1100 per preview frame), over the whole field |
 | Repeatability | Repeat captures 0.1–0.2%; x/y fits differ by 0.3–0.4%; a finer interval left out of the fit differs by up to 0.85% (full) and 2.0% (preview) | Frame to frame 0.005%; red vs green lattice 0.02%; x/y axes 0.02% |
 | Field coverage | Centre only; distortion not measured | Full field: a local scale map and radial term (≤0.13%, +0.10% at the corner, at the one setting measured) |
@@ -376,8 +377,8 @@ at recorded marks is planned.
 | Status | 14 provisional profiles at marked settings | One frame set at an unrecorded setting; no profile validated yet |
 
 In short, the display lattice is roughly ten times or more repeatable per measurement and samples the whole field. Its
-absolute accuracy (about ±0.15%) rests on the manufacturer's ppi figure, while the USAF accuracy rests on an unrecorded
-target tolerance. The two are independent references and complement each other: USAF for certified-style bar lengths at
+absolute accuracy rests on the nominal pitch, whose tolerance is not stated, while the USAF accuracy rests on an unrecorded
+target tolerance. Repeatability and agreement between the two references are not absolute accuracy. The two are independent references and complement each other: USAF for certified-style bar lengths at
 every zoom, the phone for precision, field distortion, mode ratio and colour.
 
 **To validate the profiles directly:** image the phone at recorded marks (1, 2, 3, 4, 5, 6, 7; at 0.58 the green pitch is
@@ -385,3 +386,13 @@ only ~7.6 px), in the same session as a USAF reference, alternating the two. Zoo
 display pixels lie under the cover glass at a different height from the target surface. Refocusing therefore brings in
 the unvalidated height/focus term, so a phone-vs-USAF difference at one mark measures that term together with ring
 return.
+
+### Recorded zoom marks, 29 September 2026 (draft report, pending operator review)
+
+The phone was imaged at marks 0.58 and 1–7 (series `phone-calibration-20260929`, local draft report r2). At marks 2–7 the green
+centre scale differs from the USAF profiles by −0.11% to +0.37% (centroid radial model) or −0.18% to +0.29% (Fourier, central
+quarter), comparable to the USAF diagnostics; at 0.58 by +1.46%, not explained. Zoom 1 gives 4.4158 µm/px (full resolution),
+not installed as a profile. Block Fourier fits show the local scale varying across the field by up to about 0.5% radially, so
+a centre scale is not a full-field scale; a radial displacement coefficient is not a local-scale bound. The magnification
+changes with focus by about −0.1% per fine-focus turn at marks 4 and 7. One placement per mark cannot separate screen
+geometry from optical distortion. See the [logbook](logbook.md) for the review and revisions.
