@@ -4,6 +4,7 @@ The procedure used for the September 2026 mirror sessions, from preparation to t
 archive copy on the group share. Reuse
 it for new measurements with the instrument. Capture details are on the [acquisition sheet](acquisition-sheet.md);
 scale limits are in the [USAF calibration](calibration-usaf.md) and [validation plan](calibration-validation-plan.md).
+Proposed measurements for the next session: [next session](next-session.md).
 The worked example is the backlit used-vs-new mirror comparison of 24 September 2026 (logbook entries of
 24–26 September). Its analysis and report builders are in the local packet `artifacts/captures/m4-comparison-20260924/`,
 which is not in Git; use them as templates.
