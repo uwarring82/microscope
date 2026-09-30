@@ -1,6 +1,7 @@
 # Measurement session procedure
 
-The procedure used for the September 2026 mirror sessions, from preparation to the Mattermost lab note. Reuse
+The procedure used for the September 2026 mirror sessions, from preparation to the Mattermost lab note and the
+archive copy on the group share. Reuse
 it for new measurements with the instrument. Capture details are on the [acquisition sheet](acquisition-sheet.md);
 scale limits are in the [USAF calibration](calibration-usaf.md) and [validation plan](calibration-validation-plan.md).
 The worked example is the backlit used-vs-new mirror comparison of 24 September 2026 (logbook entries of
@@ -85,14 +86,42 @@ logbook entry that covers collection only, with no interpretation yet.
 - `python3 -m tools.labnotes check NOTE.md` prints the exact post. The operator approves it, then `enqueue` and
   `deliver`. Check the result with `status`, and read the post back in `oneworld/logbook-microscope`.
 - Posted notes are not edited: send a new note with `corrects: <old id>`.
-- **Credentials:** the pilot posts from the operator's computer with his personal token, in his name. The local
+- **Credentials:** the pilot posts from the operator's computer with the operator's personal token, in the operator's
+  name. The local
   configuration points to it, so it isn't copied. Any app used by other lab members needs a bot token instead. Never
   paste tokens into chats or files in Git.
 
-## 6. Records
+## 6. Archive to the group share
 
-- **Git** holds code, tests, public methods, the logbook and the status page. **Local only:** raw sessions, specimen
-  labels, images, reports, notes, the outbox and credentials.
+The group's file share holds the archive copy of all microscope data (decision of 30 September 2026). The lab files
+lab-wide data there by data stream; the microscope is the stream `instruments/microscope/`, whose rules are in the
+share's `0_README` files and in the lab-infrastructure notes (`fileserver.md`).
+
+- **After every session** (and after rebuilding a report), with the share mounted:
+  `python3 -m tools.archive_copy run --skip-evicted`. The summary must show no `conflict` and no `failed`.
+  - `conflict`: an archived raw frame differs from the local one. Nothing was overwritten; find out which copy is
+    damaged before doing anything else.
+  - `failed`: a local frame no longer matches the SHA-256 in its metadata, or a read-back check failed. The file was
+    not put in place.
+  - `evicted`: files still in iCloud (see below) were left out. Run again later until none remain.
+- **Monthly:** `python3 -m tools.archive_copy audit` reads every archived file back. Results and each run's log are in
+  the stream's `_copylog/` on the share.
+- **Restore:** `python3 -m tools.archive_copy restore <path relative to the repository> --to DIR`, with
+  `--version <run>` for an earlier version from `_versions/`. The share's own snapshots are not visible over the
+  Mac's SMB mount; restores from them go through a Linux mount (PAULA), Windows "Previous Versions" or the computing
+  centre.
+- The destination is set only in `~/.config/microscope-archive/config.json` (not in Git). The tool refuses to run if
+  the folder has no `0_README`, which is also what an unmounted share looks like.
+- **The workspace stays in the iCloud-synced `~/Documents` for now** (operator's decision, 30 September 2026). macOS
+  may evict local file contents to iCloud when the disk is short. Reading such a file downloads it first, which slows
+  analyses; `brctl download <folder>` fetches a folder in advance. The archive copy and the audit skip evicted files
+  instead of waiting, so a run may need repeating.
+
+## 7. Records
+
+- **Git** holds code, tests, public methods, the logbook and the status page. **Not in Git:** raw sessions, specimen
+  labels, images, reports, notes, the outbox and credentials. All of these except the outbox and credentials are
+  archived on the group share (step 6); credentials never go there.
 - For each consequential step: add a logbook entry (hardware observation, synthetic test or pending validation), update
   `docs/status.md`, run `make test`, then commit and push.
 - Stop the server when finished (Ctrl-C, or ask the assistant). The camera itself is released after 30 s without frame requests.
@@ -111,3 +140,5 @@ logbook entry that covers collection only, with no interpretation yet.
 - Display-lattice (phone) calibration: focus on green; a colour-cycling page gives single-colour frames without
   touching the phone (40 frames at ~1.2 s span a 48 s cycle); a through-focus series in full fine-focus turns showed
   scale changing with focus by −0.11 to −0.14% per turn at zoom 4 and 7, but +0.03% per turn at zoom 2.
+- 30 September: iCloud had evicted about 1000 local files, so analyses and a first archive copy waited on downloads.
+  Copy what is local first (`--skip-evicted`) and repeat; keep the verified copy on the group share.

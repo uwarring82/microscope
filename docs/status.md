@@ -12,7 +12,7 @@ and history. For a new measurement session, follow the [session procedure](sessi
 | Exact-frame capture, sessions, FITS/PNG exports | Working; replay, checksum and FITS payload checks recorded in the logbook. |
 | Capture provenance | Captures made **from now on** record `modified_paths`, `snapshot_at` and `snapshot_scope`. Captures made before the restart after `a44e352` record only a `modified` boolean. |
 | Specimen sessions | `tools/specimen_session.py` captures fields with the matching profile attached, verifies files and draws contact sheets/ledgers; use with the [acquisition sheet](acquisition-sheet.md). Bracketing is tested against a simulated camera only. |
-| Lab notes to Mattermost | `tools/labnotes.py` posts dedicated notes to `logbook-microscope` (team `oneworld`) through a local outbox. Pilot in use since 2026-09-26: the operator's personal token, from the operator's computer and in the operator's name; five notes posted (including reviewed M4 r4 and phone r2 on 30 Sep). A bot token is needed before other people run it. |
+| Lab notes to Mattermost | `tools/labnotes.py` posts dedicated notes to `logbook-microscope` (team `oneworld`) through a local outbox. Pilot in use since 2026-09-26: the operator's personal token, from the operator's computer and in the operator's name; six notes posted (including reviewed M4 r4, phone r2 and the illustrated footprint follow-up in the M4 r4 thread on 30 Sep). A bot token is needed before other people run it. |
 | Display-lattice analysis | `tools/display_lattice.py` (numpy/scipy/matplotlib, analysis only): lattice scale per colour (centroid and Fourier fits), radial term, lattice modulation for through-focus series, and colour-cycle classification by lattice frequency. Synthetic tests only; validated on the 29 September phone frames. |
 | Open software issues | The rightmost raw column is always zero; its cause is not known. The sensor can saturate at about 246–254 DN without reaching 255 (seen 2026-09-24), so the server's count at 255 underestimates clipping; the session tool also reports % ≥240. Sensor black measured with the objective capped (29 Sep): 9.9–10.0 DN at gain 50, nearly flat from 515 to 3000 lines. Saturation level and exposure time in seconds are not characterized. |
 
@@ -49,8 +49,9 @@ filing structure by data stream (`instruments/microscope/`), with `tools/archive
 frames write-once, other files versioned, every copy read back and verified. Local
 checksum-verified ZIP packets remain. No data license or DOI has been assigned.
 
-The repository currently lies in `~/Documents`, which iCloud syncs with storage
-optimisation on: `sessions/` and `artifacts/` are therefore also stored in the
-operator's iCloud, and macOS evicts local copies when the disk is short (logbook,
-30 September). Checksums still verify. Decision pending: move the project out of
-iCloud, keep it downloaded, or free disk space.
+The workspace lies in `~/Documents`, which iCloud syncs with storage optimisation
+on: `sessions/` and `artifacts/` are also stored in the operator's iCloud, and macOS
+evicts local copies when the disk is short. **Decision (30 September): the workspace
+stays in iCloud for now**; the verified archive copy on the group share is the
+long-term copy. The copy and audit skip evicted files instead of waiting
+([session procedure](session-procedure.md#6-archive-to-the-group-share)).
