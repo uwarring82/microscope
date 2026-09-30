@@ -97,8 +97,28 @@ is refused: post a correction with `corrects:` instead. Mentions such as `@chann
 timeout may have posted anyway, so a retry is marked in the text. With the API transport, the channel is
 checked for the event ID before re-posting. Credentials stay outside Git in
 `~/.config/microscope-labnotes/config.json` (mode 600). Use either a channel-locked incoming webhook (text only)
-or a token (text and attachments). A `token_file` option reads the token from an existing private `.env`, so it is not copied. The current pilot posts from the operator's own computer with his personal access token, in his name (his decision, 2026-09-26). An app used by other lab members needs a bot token instead. Notes and the
+or a token (text and attachments). A `token_file` option reads the token from an existing private `.env`, so it is not copied. The current pilot posts from the operator's own computer with the operator's personal access token, in the operator's name (the operator's decision, 2026-09-26). An app used by other lab members needs a bot token instead. Notes and the
 outbox are local lab data.
+
+## Archive copy to the group share
+
+`tools/archive_copy.py` copies `sessions/` and `artifacts/captures/` one way to the group's file share
+(stream folder `instruments/microscope/` of the lab's filing structure), under the same relative paths,
+so field records still find their frames and a restore is a plain copy back.
+
+```sh
+python3 -m tools.archive_copy run [--dry-run] [--skip-evicted]   # copy new and changed files; read back and verify each one
+python3 -m tools.archive_copy audit             # read back everything (monthly)
+python3 -m tools.archive_copy restore sessions/<session>/<capture>.raw --to DIR [--version RUN]
+```
+
+Raw frames are write-once: an archived frame is never overwritten, a differing one is reported as a
+conflict, and a local frame that no longer matches the SHA-256 in its metadata is not copied. Other files
+are versioned (the previous archived version moves to `_versions/<run>/`). Nothing is deleted, and each run
+leaves `_copylog/<run>.tsv`. The destination is local configuration (`--dest`, `MICROSCOPE_ARCHIVE_DEST` or
+`~/.config/microscope-archive/config.json`) and must contain a `0_README`, so an unmounted share is never
+mistaken for an empty folder. On a Mac whose `~/Documents` is in iCloud, `--skip-evicted` leaves files whose
+content is still in iCloud for a later run instead of waiting for each download.
 
 ## Development
 

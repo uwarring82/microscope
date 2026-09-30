@@ -42,9 +42,12 @@ and history. For a new measurement session, follow the [session procedure](sessi
 
 ## Data stewardship
 
-Raw data, sessions, calibration profiles and reports stay local and are ignored
-by Git. They are backed up only as local checksum-verified ZIP packets, with no
-external backup. No data license or DOI has been assigned.
+Raw data, sessions, calibration profiles and reports are ignored by Git. Since
+30 September they are copied one way to the group's file share (run by the
+university computing centre, with its own snapshots and replication), in the lab's
+filing structure by data stream (`instruments/microscope/`), with `tools/archive_copy.py`:
+frames write-once, other files versioned, every copy read back and verified. Local
+checksum-verified ZIP packets remain. No data license or DOI has been assigned.
 
 The repository currently lies in `~/Documents`, which iCloud syncs with storage
 optimisation on: `sessions/` and `artifacts/` are therefore also stored in the
