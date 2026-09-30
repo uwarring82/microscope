@@ -387,7 +387,7 @@ display pixels lie under the cover glass at a different height from the target s
 the unvalidated height/focus term, so a phone-vs-USAF difference at one mark measures that term together with ring
 return.
 
-### Recorded zoom marks, 29 September 2026 (draft report, pending operator review)
+### Recorded zoom marks, 29 September 2026 (reviewed draft, circulated 30 September)
 
 The phone was imaged at marks 0.58 and 1–7 (series `phone-calibration-20260929`, local draft report r2). At marks 2–7 the green
 centre scale differs from the USAF profiles by −0.11% to +0.37% (centroid radial model) or −0.18% to +0.29% (Fourier, central
